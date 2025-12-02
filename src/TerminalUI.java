@@ -33,15 +33,10 @@ public class TerminalUI {
                 if(this.game.getPlayerMovePhase() == 0) {
                     Player player = this.game.getNextPlayerMove();
                     if(player.getType().equals("player")) {
-                        System.out.println("");
-                        printPlayerHand();
-                        ArrayList<Card> table = this.game.getCurrentTable();
-                        System.out.println("TABLE:");
-                        for(Card card: table) {
-                            System.out.println(card);
-                        }
+                        printTable();
                         
-                        System.out.println("Play your card: (input needs to be same as it is shown in your current hand)");
+                        System.out.println("------------------------");
+                        System.out.println("Play your card: (input needs to be same as it is shown in 'Your cards:')");
                         String commandInput = this.scanner.nextLine();
 
                         if(commandInput.equals("quit")) {
@@ -58,16 +53,13 @@ public class TerminalUI {
                         } else {
                             continue;
                         }
+                        
                     } else if(player.getType().equals("cpu")) {
                         System.out.println("");
-                        printPlayerHand();
-                        ArrayList<Card> table = this.game.getCurrentTable();
-                        System.out.println("TABLE:");
-                        for(Card card: table) {
-                            System.out.println(card);
-                        }
+                        printTable();
+                        System.out.println("------------------------");
+                        System.out.println("CPU is playing card...");
 
-                        System.out.println("CPU is thinking which card to play...");
                         try {
                             Thread.sleep(1500);
                         } catch(InterruptedException exception) {
@@ -80,18 +72,10 @@ public class TerminalUI {
                 } else if(this.game.getPlayerMovePhase() == 1) {
                     Player player = this.game.getNextPlayerMove();
                     if(player.getType().equals("player")) {
-                        System.out.println("");
-                        printPlayerHand();
                         ArrayList<Card> table = this.game.getCurrentTable();
-                        System.out.println("TABLE:");
-                        for(int i = 0; i < table.size(); i++) {
-                            if(i == table.size() - 1) {
-                                System.out.println("played card: " + table.get(i));
-                            } else {
-                                System.out.println(table.get(i));
-                            }
-                        }
-
+                        printTable();
+                        System.out.println("------------------------");
+                        System.out.println("Played card: " + table.get(this.game.getCurrentTable().size() - 1));
                         printAllCombinations();
                         if(this.game.getAllCombinations().size() == 0) {
                             System.out.println("You can't win any cards, press enter to continue:");
@@ -123,19 +107,11 @@ public class TerminalUI {
                             }
                         }
                     } else if(player.getType().equals("cpu")) {
-                        System.out.println("");
-                        printPlayerHand();
+                        printTable();
+                        System.out.println("------------------------");
                         ArrayList<Card> table = this.game.getCurrentTable();
-                        System.out.println("TABLE:");
-                        for(int i = 0; i < table.size(); i++) {
-                            if(i == table.size() - 1) {
-                                System.out.println("cpu played card: " + table.get(i));
-                            } else {
-                                System.out.println(table.get(i));
-                            }
-                        }
-                        
-                        System.out.println("cpu is picking combination...");
+                        System.out.println("CPU played card: " + table.get(table.size() - 1));
+                        System.out.println("CPU is picking card combination...");
                         try {
                             Thread.sleep(2000);
                         } catch(InterruptedException exception) {
@@ -157,6 +133,7 @@ public class TerminalUI {
                 }
             }
             while(this.game.getState().equals("next-deal-of-cards")) {
+                System.out.println("---------- END OF THE TURN ---------");
                 System.out.println("Dealing cards to players...");
                 try {
                     Thread.sleep(2000);
@@ -182,10 +159,7 @@ public class TerminalUI {
 
     public void printPlayerHand() {
         Player player = this.game.getNextPlayerMove();
-        System.out.println(player.getType() + " HAND CARDS: ");
-        for(Card card: player.getCurrentHand()) {
-            System.out.println(card);
-        }
+        System.out.print(player.getCurrentHand());
     }
 
     public void printWonCards() {
@@ -198,24 +172,34 @@ public class TerminalUI {
     }
 
     public void printAllCombinations() {
-        System.out.println("combinations: ");
-        for(int i = 0; i < this.game.getAllCombinations().size(); i++) {
-            System.out.print(i + 1 + ": [ ");
-            for(int j = 0; j < this.game.getAllCombinations().get(i).size(); j++) {
-                if(j == this.game.getAllCombinations().get(i).size() - 1) {
-                    System.out.print(" = " + this.game.getAllCombinations().get(i).get(j));
-                } else {
-                    if(this.game.getAllCombinations().get(i).size() > 2) {
-                        System.out.print(this.game.getAllCombinations().get(i).get(j) + " + ");
+        if(this.game.getAllCombinations().size() > 0) {
+            System.out.println("Pick card combination: ");
+            for(int i = 0; i < this.game.getAllCombinations().size(); i++) {
+                ArrayList<Card> currCombination = this.game.getAllCombinations().get(i);
+                System.out.print(i + 1 + ": [ ");
+                for(int j = 0; j < currCombination.size(); j++) {
+                    if(currCombination.size() == 2) {
+                        if(j == currCombination.size() - 1) {
+                            System.out.print(currCombination.get(j) + "");
+                        } else {
+                            System.out.print(currCombination.get(j) + " = ");
+                        }
+                        
                     } else {
-                        System.out.print(this.game.getAllCombinations().get(i).get(j) + "");
+                        if(j == currCombination.size() - 1) {
+                            System.out.print(currCombination.get(j) + "");
+                        } else if(j == currCombination.size() - 2) {
+                            System.out.print(currCombination.get(j) + " = ");
+                        } else {
+                            System.out.print(currCombination.get(j) + " + ");
+                        }
                     }
-                    
                 }
+                System.out.print(" ]");
+                System.out.println("");
             }
-            System.out.print(" ]");
-            System.out.println("");
         }
+        
     }
 
     public void printLastWinnerInRound() {
@@ -330,17 +314,31 @@ public class TerminalUI {
     }
 
     public void printTable() {
-        System.out.println("Your hand: ");
-        printCardTable(7, 40);
+        int rows = 9;
+        int cols = 40;
+        ArrayList<ArrayList<Card>> cardRows = calcCardRows();
+        // calc offset for current row
+        int offSetStart = 0;
+        int offSetRow = cardRows.size() / 2;
         
 
-    }
+        String tableTitle = "TABLE";
+        String gameStateTitle = "";
+        Player player = this.game.getNextPlayerMove();
+        if(!player.getType().equals("cpu") && this.game.getState().equals("player-move")) {
+            gameStateTitle = "Your cards:";
+        }
 
-    public void printCardTable(int rows, int cols) {
-        printEmptySpaces((cols / 2) - 2);
-        System.out.println("TABLE");
+        printEmptySpaces((cols / 2) - tableTitle.length() / 2);
+        System.out.print("TABLE");
+        printEmptySpaces(cols - gameStateTitle.length() / 2);
+        System.out.print(gameStateTitle);
+        System.out.println("");
+
+        // print table and rest of the game state
         for(int i = 0; i < rows; i++) {
             for(int j = 0; j < cols; j++) {
+                // print empty table
                 if(i != 0 && i != (rows - 1)) {
                     if(j == 0 || j == 1 || j == (cols - 2) || j == (cols - 1)) {
                         System.out.print("*");
@@ -350,9 +348,80 @@ public class TerminalUI {
                 } else {
                     System.out.print("*");
                 }
+
+                // start printing cards at the middle of table and apply offset which is based on how many card rows are there
+                if(cardRows.size() > 0 && i + offSetRow - offSetStart == rows / 2 && j == ((cols / 2) - (3 * cardRows.get(0).size()) / 2 - 1)) {
+                    // remove one list from cardRows and print it
+                    ArrayList<Card> cards = cardRows.remove(0);
+                    int skippedCols = printCurrentTable(cards);
+                    offSetStart++;
+                    j+= skippedCols;
+                }
+
+                // after table print rest of game state
+                if(this.game.getState().equals("player-move") && (this.game.getPlayerMovePhase() == 0 || this.game.getPlayerMovePhase() == 1)) {
+                    if(i == 1 && j == cols -1) {
+                        int lengthOfAllCards = getToStringLengthOfCards(this.game.getNextPlayerMove().getCurrentHand());
+                        printEmptySpaces(cols / 2 - lengthOfAllCards / 2);
+                        if(!player.getType().equals("cpu")) {
+                            printPlayerHand();
+                        }
+                    }
+                }
+                
+
             }
             System.out.println("");
         }
+    }
+
+    public int getToStringLengthOfCards(ArrayList<Card> cards) {
+        int lengthOfAllCards = 0;
+        for(Card card: this.game.getNextPlayerMove().getCurrentHand()) {
+            lengthOfAllCards+= card.getToStringLength();
+        }
+
+        return lengthOfAllCards;
+    }
+
+    // every four cards create new array list for card rows
+    public ArrayList<ArrayList<Card>> calcCardRows() {
+        ArrayList<Card> currentTableCopy = new ArrayList<>(this.game.getCurrentTable());
+        ArrayList<ArrayList<Card>> cardRows = new ArrayList<>();
+
+        if(currentTableCopy.size() > 0) {
+            int cardCurrRow = 0;
+            ArrayList<Card> cards = new ArrayList<>();
+            cardRows.add(cards);
+            for(int i = 1; i <= currentTableCopy.size(); i++) {
+                cardRows.get(cardCurrRow).add(currentTableCopy.get(i - 1));
+
+                if(i % 4 == 0 && i < currentTableCopy.size()) {
+                    cardCurrRow++;
+                    cards = new ArrayList<>();
+                    cardRows.add(cards);
+                }
+            }
+        }
+
+        return cardRows;
+    }
+
+    public int printCurrentTable(ArrayList<Card> cardsToPrint) {
+        ArrayList<Card> table = this.game.getCurrentTable();
+
+        // one card is 3 spaces long
+        int skippedCols = 0;
+
+        for(Card card: cardsToPrint) {
+            System.out.print(card + " ");
+            int cardStringLength = card.getToStringLength();
+
+            skippedCols+= cardStringLength + 1;
+        }
+        
+
+        return skippedCols;
     }
 
     public void printEmptySpaces(int spaces) {

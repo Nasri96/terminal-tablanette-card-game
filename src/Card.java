@@ -27,6 +27,10 @@ public class Card {
         return this.points;
     }
 
+    public int getToStringLength() {
+        return this.symbol.length() + "-".length() + 1;
+    }
+
 
     public String toString() {
         String redColor = "\u001B[31m";
