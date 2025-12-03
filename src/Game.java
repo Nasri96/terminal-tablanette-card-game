@@ -10,6 +10,7 @@ public class Game {
     private int winningScore;
     private Player lastWinnerInRound;
     private Player lastWinnerOfMoreCards;
+    private Player lastWinnerOfTablePoint;
     private ArrayList<ArrayList<Card>> equalCombinations;
     private ArrayList<ArrayList<Card>> additionCombinations;
     private ArrayList<ArrayList<Card>> multiAdditionCombinations;
@@ -28,6 +29,7 @@ public class Game {
         this.winningScore = 20;
         this.lastWinnerInRound = null;
         this.lastWinnerOfMoreCards = null;
+        this.lastWinnerOfTablePoint = null;
         this.equalCombinations = new ArrayList<>();
         this.additionCombinations = new ArrayList<>();
         this.multiAdditionCombinations = new ArrayList<>();
@@ -67,6 +69,10 @@ public class Game {
 
     public Player getLastWinnerOfMoreCards() {
         return this.lastWinnerOfMoreCards;
+    }
+
+    public Player getLastWinnerOfTablePoint() {
+        return this.lastWinnerOfTablePoint;
     }
 
     public void startGame(TerminalUI ui) {
@@ -149,17 +155,31 @@ public class Game {
                         player.clearLastWonCards();
                         this.playerMovePhase = 2;
                     } else {
-                        // pick a correct combination that player choose and remove those cards from table and add them to player's won cards
+                        // pick a correct combination that player choose and remove those cards from table and add them to player's won cards or just play card and move to next phase
+                        // if player win all cards from table he gets one 'table point' which adds one total points
                         ArrayList<Card> pickedCombinations = findPickedCombination(input);
-                        // give won cards to player
-                        player.clearLastWonCards();
-                        player.winCards(pickedCombinations);
-                        addPointsToPlayer(player);
-                        this.lastWinnerInRound = player;
-                        // remove won cards from table
-                        removeWonCardsFromTable(pickedCombinations);
-                        // move to next phase
-                        this.playerMovePhase = 2;
+                        if(pickedCombinations.size() == 0) {
+                            player.clearLastWonCards();
+                            this.playerMovePhase = 2;
+                        } else {
+                            // give won cards to player
+                            player.clearLastWonCards();
+                            player.winCards(pickedCombinations);
+                            addPointsToPlayer(player);
+                            this.lastWinnerInRound = player;
+                            // remove won cards from table
+                            removeWonCardsFromTable(pickedCombinations);
+                            // check if player won all cards from table
+                            boolean tablePoint = checkTablePoint();
+                            if(tablePoint) {
+                                player.addTablePoint();
+                                addPointsToPlayer(player, 1);
+                                this.lastWinnerOfTablePoint = player;
+                            }
+                            // move to next phase
+                            this.playerMovePhase = 2;
+                        }
+        
                     }
                 } else if(player.getType().equals("cpu")) {
                     handleCpuMovePhase1();
@@ -203,6 +223,10 @@ public class Game {
         player.setPoints(points);
     }
 
+    public boolean checkTablePoint() {
+        return this.currentTable.isEmpty();
+    }
+
     public void removeWonCardsFromTable(ArrayList<Card> wonCards) {
         ArrayList<Card> currentTableCopy = new ArrayList<>(this.currentTable);
         for(int i = 0; i < currentTableCopy.size(); i++) {
@@ -243,13 +267,15 @@ public class Game {
         }
       
 
+        this.lastWinnerOfTablePoint = null;
         this.playerMovePhase = 0;
     }
 
     public void handleNextRound() {
         this.roundsPlayed++;
-        // reset more cards winner after every round
+        // reset more cards winner and table point winner after every round
         this.lastWinnerOfMoreCards = null;
+        this.lastWinnerOfTablePoint = null;
 
         // on every new round, swap who should play first
         if(roundsPlayed % 2 == 0) {
@@ -332,7 +358,8 @@ public class Game {
             this.playerMovePhase = 2;
             cpu.clearLastWonCards();
         } else {
-            // pick a correct combination that player choose and remove those cards from table and add them to player's won cards
+            // pick a correct combination that cpu choose and remove those cards from table and add them to player's won cards
+            // if cpu win all cards from table he gets one 'table point' which adds one total points
             ArrayList<Card> pickedCombinations = this.allCombinations.get(randomIndex);
             // give won cards to player
             cpu.clearLastWonCards();
@@ -341,6 +368,13 @@ public class Game {
             this.lastWinnerInRound = cpu;
             // remove won cards from table
             removeWonCardsFromTable(pickedCombinations);
+            // check if player won all cards from table
+            boolean tablePoint = checkTablePoint();
+            if(tablePoint) {
+                cpu.addTablePoint();
+                addPointsToPlayer(cpu, 1);
+                this.lastWinnerOfTablePoint = cpu;
+            }
             // move to next phase
             this.playerMovePhase = 2;
         }
@@ -370,6 +404,11 @@ public class Game {
 
     public ArrayList<Card> findPickedCombination(String allCombinationsInputIndex) {
         int inputIndex = Integer.valueOf(allCombinationsInputIndex);
+
+        // return empty list if player choose to play card only
+        if(inputIndex == -1) {
+            return new ArrayList<Card>();
+        }
 
         return allCombinations.get(inputIndex);
     }

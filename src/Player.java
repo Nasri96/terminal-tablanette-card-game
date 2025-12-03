@@ -6,6 +6,7 @@ public class Player {
     private ArrayList<Card> lastCardsWon;
     private ArrayList<Card> currentHand;
     private int pointsWon;
+    private int tablePoints;
 
     public Player(String type) {
         this.type = type;
@@ -13,6 +14,7 @@ public class Player {
         this.lastCardsWon = new ArrayList<Card>();
         this.currentHand = new ArrayList<Card>();
         this.pointsWon = 0;
+        this.tablePoints = 0;
     }
 
     public String getType() {
@@ -41,6 +43,14 @@ public class Player {
 
     public void setPoints(int points) {
         this.pointsWon+= points;
+    }
+
+    public void addTablePoint() {
+        this.tablePoints++;
+    }
+
+    public int getTablePoints() {
+        return this.tablePoints;
     }
 
     public void addCardToCurrentHand(Card card) {

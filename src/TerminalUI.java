@@ -101,7 +101,10 @@ public class TerminalUI {
                                     if(commandInput >= 1 && commandInput <= this.game.getAllCombinations().size()) {
                                         this.game.getInputFromUI(String.valueOf(commandInput - 1));
                                         break;
-                                    } 
+                                    } else if(commandInput == -1) {
+                                        this.game.getInputFromUI(String.valueOf(commandInput));
+                                        break;
+                                    }
 
                                 } catch(NumberFormatException msg) {}
                             }
@@ -174,7 +177,12 @@ public class TerminalUI {
     public void printAllCombinations() {
         if(this.game.getAllCombinations().size() > 0) {
             System.out.println("Pick card combination: ");
-            for(int i = 0; i < this.game.getAllCombinations().size(); i++) {
+            for(int i = 0; i < this.game.getAllCombinations().size() + 1; i++) {
+                // after last combination play card only
+                if(i == this.game.getAllCombinations().size()) {
+                    System.out.println(-1 +  ": Play card only");
+                    break;
+                }
                 ArrayList<Card> currCombination = this.game.getAllCombinations().get(i);
                 System.out.print(i + 1 + ": [ ");
                 for(int j = 0; j < currCombination.size(); j++) {
@@ -235,14 +243,26 @@ public class TerminalUI {
 
     public void printPointsAwarded() {
         Player lastTurnWinner = this.game.getNextPlayerMove();
+        Player lastWinnerOfTablePoint = this.game.getLastWinnerOfTablePoint();
+
         int newPoints = 0;
         if(lastTurnWinner.getLastCardsWon().size() > 0) {
+            // print won cards
             ArrayList<Card> wonCards = lastTurnWinner.getLastCardsWon();
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
 
             System.out.println(lastTurnWinner.getType() + " received " + newPoints + " points");
+            try {
+                Thread.sleep(1000);
+            } catch(InterruptedException exception) {
+                System.out.println("interrupted...");
+            }
+            // check if player scored table point
+            if(lastWinnerOfTablePoint != null) {
+                System.out.println(lastWinnerOfTablePoint.getType() + " received " + 1 + " table point");
+            }
             try {
                 Thread.sleep(1000);
             } catch(InterruptedException exception) {
