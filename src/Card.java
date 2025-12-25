@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Card {
     private char suit;
     private String symbol;
@@ -41,5 +43,24 @@ public class Card {
         }
 
         return this.symbol + "-" + this.suit;
+    }
+
+    public boolean equals(Object compared) {
+        if(this == compared) {
+            return true;
+        }
+
+        if(!(compared instanceof Card)) {
+            return false;
+        }
+
+        Card comparedCard = (Card) compared;
+
+        return this.suit == comparedCard.suit && this.symbol.equals(comparedCard.symbol);
+
+    }
+
+    public int hashCode() {
+        return Objects.hash(this.suit, this.symbol);
     }
 }
