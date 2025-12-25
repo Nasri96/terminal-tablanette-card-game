@@ -13,10 +13,6 @@ public class Game {
     private Player lastWinnerInRound;
     private Player lastWinnerOfMoreCards;
     private Player lastWinnerOfTablePoint;
-    private ArrayList<ArrayList<Card>> equalCombinations;
-    private ArrayList<ArrayList<Card>> additionCombinations;
-    private ArrayList<ArrayList<Card>> multiAdditionCombinations;
-    private ArrayList<ArrayList<Card>> equalsCombinedCombinations;
     private ArrayList<ArrayList<Card>> allCombinations;
     private HashMap<String, Set<Set<Card>>> mapCombinations;
     private Player[] players;
@@ -489,11 +485,6 @@ public class Game {
                 }
                 if(this.currentTable.get(i).getValue() == this.currentTable.get(j).getValue()) {
                     if(this.currentTable.get(i).getValue() == playedCard.getValue()) {
-                        Card[] cards = { this.currentTable.get(i), this.currentTable.get(j), playedCard };
-                        boolean foundDuplicates = this.checkDuplicates(cards);
-                        if(foundDuplicates) {
-                            continue;
-                        }
                         LinkedHashSet<Card> twoCard = new LinkedHashSet<>();
                         twoCard.add(this.currentTable.get(i));
                         twoCard.add(this.currentTable.get(j));
@@ -540,30 +531,6 @@ public class Game {
         // System.out.println(this.equalsCombinedCombinations);
         // System.out.println("ALL COMBINATIONS:");
         // System.out.println(this.allCombinations);
-    }
-
-    public boolean checkDuplicates(Card[] cards) {
-        int foundDuplicates = 0;
-        for(int j = 0; j < this.equalCombinations.size(); j++) {
-            // reset duplicates on next list
-            foundDuplicates = 0;
-            if(this.equalCombinations.get(j).size() == 2) {
-                for(int k = 0; k < this.equalCombinations.get(j).size(); k++) {
-                    for(int i = 0; i < cards.length; i++) {
-                        if(this.equalCombinations.get(j).get(k).equals(cards[i])) {
-                            foundDuplicates++;
-                        }
-                    }
-
-                    if(foundDuplicates == 2) {
-                        return true;
-                    }
-                }
-            }
-        }
-        
-
-        return false;
     }
 
     // generates all unique combinations where value of n cards == played card value
