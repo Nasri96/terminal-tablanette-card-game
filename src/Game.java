@@ -5,10 +5,10 @@ import java.util.Set;
 
 public class Game {
     private CardDeck deck;
-    private String state;
     private int playerMoveIndex;
     private int playerMovePhase;
     private int roundsPlayed;
+    private boolean roundChanged;
     private int winningScore;
     private Player lastWinnerInRound;
     private Player lastWinnerOfMoreCards;
@@ -17,15 +17,17 @@ public class Game {
     private HashMap<String, Set<Set<Card>>> mapCombinations;
     private Player[] players;
     private ArrayList<Card> currentTable;
-
+    public GameState gameState;
+    public TerminalUI ui;
+    
     public Game(CardDeck deck, Player[] players) {
         this.deck = deck;
-        this.state = "main-menu";
         // next player move index can be 0 or 1, as two players max can play the game
         this.playerMoveIndex = 0;
         this.playerMovePhase = 0;
         this.roundsPlayed = 0;
-        this.winningScore = 20;
+        this.roundChanged = false;
+        this.winningScore = 10;
         this.lastWinnerInRound = null;
         this.lastWinnerOfMoreCards = null;
         this.lastWinnerOfTablePoint = null;
@@ -33,10 +35,12 @@ public class Game {
         this.mapCombinations = new HashMap<>();
         this.players = players;
         this.currentTable = new ArrayList<Card>();
+        this.gameState = GameState.GAME_SETUP;
+        this.ui = null;
     }
 
-    public String getState() {
-        return this.state;
+    public void setUi(TerminalUI ui) {
+        this.ui = ui;
     }
 
     public int getPlayerMovePhase() {
@@ -75,129 +79,241 @@ public class Game {
         ui.start();
     }
 
-    public void getInputFromUI(String input) {
-        this.updateGame(input);
-    }
-
-    public Player getNextPlayerMove() {
+    public Player getCurrentPlayerMove() {
         return this.players[this.playerMoveIndex];
     }
 
-    public void updateGame(String input) {
-        // on start, set game state to start, shuffle the deck and deal the cards to the players and table
-        if(input.equals("start")) {
-            this.state = "player-move";
-            // shuffle the deck
-            this.deck.shuffleDeck();
-            // deal cards, three cards to each player in two rounds, then four cards to the table
-            this.dealCardsToPlayers();
-            this.dealCardsToPlayers();
-            // this.dealCardsToPlayers();
-            this.dealCardsToTable();
-            // initialize combinations
-            this.initializeCombinations();
-            return;
-        }
+    public void updateGame(GameInput input) {
 
-        if(input.equals("main-menu")) {
-            this.state = "main-menu";
-        }
-
-        if(input.equals("quit")) {
-            this.state = "game-over";
-        }
-
-        if(input.equals("next-turn")) {
-            boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
-            boolean deckIsEmpty = checkPlayingDeckIsEmpty();
-
-            if(playersCurrentHandsEmpty && deckIsEmpty) {
-                handleNextRound();
-                return;
-            }
-
-            handleNextTurn();
-            return;
-        }
-
-        if(input.equals("player-move")) {
-            this.state = "player-move";
-            return;
-        }
-
-        // handle player-move game logic
-        if(this.state == "player-move") {
-            if(this.playerMovePhase == 0) {
-                Player player = this.getNextPlayerMove();
-                if(player.getType().equals("player")) {
-                    // find which card is played
-                    Card playedCard = findPlayedCard(input);
-                    // remove card from player's current hand
-                    player.playCard(playedCard);
-                    // find winning combinations
-                    this.createWinningCombinations(playedCard);
-                    // add played card to table
-                    this.playCardToTable(playedCard);
-                    // move to next phase
-                    this.playerMovePhase = 1;
-                } else if(player.getType().equals("cpu")) {
-                    handleCpuMovePhase0();
+        switch(gameState) {
+            case GAME_SETUP:
+                if(input.action == GameAction.START) {
+                    handleStart();
+                    this.gameState = GameState.TURN_PLAY_CARD;
                 }
+
+                break;
+
+            case TURN_PLAY_CARD:
+                if(input.action == GameAction.PLAY_CARD) {
+                    handlePlayCard(input.payload);
+                    this.gameState = GameState.TURN_PICK_COMBINATION;
+                }
+
+                break;
+
+            case TURN_PICK_COMBINATION:
+                if(input.action == GameAction.PICK_COMBINATION) {
+                    handlePickCombination(input.payload);
+                    this.gameState = GameState.TURN_RESOLVE;
+                }
+
+                break;
+                
+            case TURN_RESOLVE:
+                if(input.action == GameAction.CONTINUE) {
+                    GameState turnResult = handleResolveTurn();
+                    this.gameState = turnResult;
+                }
+
+                break;
+
+            case ROUND_END:
+                if(input.action == GameAction.CONTINUE) {
+                    handleRoundEnd();
+                    this.gameState = GameState.ROUND_START;
+                }
+
+                break;
+
+            case ROUND_START:
+                if(input.action == GameAction.CONTINUE) {
+                    handleRoundStart();
+                    this.gameState = GameState.NEXT_TURN;
+                }
+
+                break;
+
+            case NEXT_TURN:
+                if(input.action == GameAction.CONTINUE) {
+                    handleNewNextTurn();
+
+                    boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
+                    if(playersCurrentHandsEmpty) {
+                        this.gameState = GameState.DEAL_CARDS;
+                    } else {
+                        this.gameState = GameState.TURN_PLAY_CARD;
+                    }
+                }
+
+                break;
+
+            case DEAL_CARDS:
+                if(input.action == GameAction.CONTINUE) {
+                    handleDealCards();
+                    this.gameState = GameState.TURN_PLAY_CARD;
+                }
+
+                break;
+            
+            // to do later
+            case GAME_OVER:
+                this.gameState = GameState.GAME_OVER;
                 
 
-            } else if(this.playerMovePhase == 1) {
-                Player player = this.getNextPlayerMove();
-                if(player.getType().equals("player")) {
-                    // no combinatinos can be won => move to next phase
-                    if(this.allCombinations.size() == 0) {
-                        player.clearLastWonCards();
-                        this.playerMovePhase = 2;
-                    } else {
-                        // pick a correct combination that player choose and remove those cards from table and add them to player's won cards or just play card and move to next phase
-                        // if player win all cards from table he gets one 'table point' which adds one total points
-                        ArrayList<Card> pickedCombinations = findPickedCombination(input);
-                        if(pickedCombinations.size() == 0) {
-                            player.clearLastWonCards();
-                            this.playerMovePhase = 2;
-                        } else {
-                            // give won cards to player
-                            player.clearLastWonCards();
-                            player.winCards(pickedCombinations);
-                            addPointsToPlayer(player);
-                            this.lastWinnerInRound = player;
-                            // remove won cards from table
-                            removeWonCardsFromTable(pickedCombinations);
-                            // check if player won all cards from table
-                            boolean tablePoint = checkTablePoint();
-                            if(tablePoint) {
-                                player.addTablePoint();
-                                addPointsToPlayer(player, 1);
-                                this.lastWinnerOfTablePoint = player;
-                            }
-                            // move to next phase
-                            this.playerMovePhase = 2;
-                        }
-        
-                    }
-                } else if(player.getType().equals("cpu")) {
-                    handleCpuMovePhase1();
+                
+        }
+
+    }
+
+    public void handleStart() {
+        // shuffle the deck
+        this.deck.shuffleDeck();
+        // deal cards, three cards to each player in two rounds, then four cards to the table
+        this.dealCardsToPlayers();
+        this.dealCardsToPlayers();
+        // this.dealCardsToPlayers();
+        this.dealCardsToTable();
+        // initialize combinations
+        this.initializeCombinations();
+    }
+
+    public void handlePlayCard(Object payload) {
+        Player player = this.getCurrentPlayerMove();
+        // find which card is played
+        Card playedCard = findPlayedCard(String.valueOf(payload));
+        // remove card from player's current hand
+        player.playCard(playedCard);
+        // find winning combinations
+        this.createWinningCombinations(playedCard);
+        // add played card to table
+        this.playCardToTable(playedCard);
+    }
+
+    public void handlePickCombination(Object payload) {
+        Player player = this.getCurrentPlayerMove();
+        // no combinatinos can be won => move to next phase
+        if(this.allCombinations.size() == 0) {
+            player.clearLastWonCards();
+        } else {
+            // pick a correct combination that player choose and remove those cards from table and add them to player's won cards or just play card and move to next phase
+            // if player win all cards from table he gets one 'table point' which adds one total points
+            ArrayList<Card> pickedCombinations = findPickedCombination(String.valueOf(payload));
+            if(pickedCombinations.size() == 0) {
+                player.clearLastWonCards();
+            } else {
+                // give won cards to player
+                player.clearLastWonCards();
+                player.winCards(pickedCombinations);
+                addPointsToPlayer(player);
+                this.lastWinnerInRound = player;
+                // remove won cards from table
+                removeWonCardsFromTable(pickedCombinations);
+                // check if player won all cards from table
+                boolean tablePoint = checkTablePoint();
+                if(tablePoint) {
+                    player.addTablePoint();
+                    addPointsToPlayer(player, 1);
+                    this.lastWinnerOfTablePoint = player;
                 }
-            } 
-        } 
+            }
+        }
+    }
+
+    public GameState handleResolveTurn() {
+        boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
+        boolean deckIsEmpty = checkPlayingDeckIsEmpty();
+
+        if(playersCurrentHandsEmpty && deckIsEmpty) {
+            return GameState.ROUND_END;
+        }
         
+        return GameState.NEXT_TURN;
+    }
+
+    public void handleDealCards() {
+        this.dealCardsToPlayers();
+        this.dealCardsToPlayers();
+    }
+
+    public void handleNewNextTurn() {
+        // on every new turn, swap who is playing
+        if(this.playerMoveIndex == 0) {
+            this.playerMoveIndex = 1;
+        } else {
+            this.playerMoveIndex = 0;
+        }
+
+        // on every new round, swap who should play first (override previous if only if round is changed)
+        if(this.roundChanged) {
+            if(roundsPlayed % 2 == 0) {
+                this.playerMoveIndex = 0;
+            } else {
+                this.playerMoveIndex = 1;
+            }
+
+            this.roundChanged = false;
+        }
+
+
+        this.lastWinnerOfTablePoint = null;
+    }
+
+    public void handleRoundEnd() {
+        this.roundsPlayed++;
+        this.roundChanged = true;
+        // reset more cards winner and table point winner after every round
+        this.lastWinnerOfMoreCards = null;
+        this.lastWinnerOfTablePoint = null;
+
+        // give last winner of round remaining cards, if any, from table
+        if(this.currentTable.size() > 0) {
+            this.lastWinnerInRound.clearLastWonCards();
+            this.lastWinnerInRound.winCards(this.currentTable);
+            addPointsToPlayer(this.lastWinnerInRound);
+            removeWonCardsFromTable(currentTable);
+        } else {
+            this.lastWinnerInRound = null;
+        }
+
+        // check which player has more total cards taken, and award them 3 points
+        int player1CardsWon = this.players[0].getCardsWonSize();
+        int player2CardsWon = this.players[1].getCardsWonSize();
+        if(player1CardsWon > player2CardsWon) {
+            this.lastWinnerOfMoreCards = players[0];
+            addPointsToPlayer(this.players[0], 3);
+        } else if(player2CardsWon > player1CardsWon) {
+            this.lastWinnerOfMoreCards = players[1];
+            addPointsToPlayer(this.players[1], 3);
+        }
+    }
+
+    public void handleRoundStart() {
+        // collect cards to the deck
+        ArrayList<Card> playerCards = this.players[0].getCardsWon();
+        ArrayList<Card> cpuCards = this.players[1].getCardsWon();
+        this.deck.getDeck().addAll(playerCards);
+        this.deck.getDeck().addAll(cpuCards);
+        // reset player cards won
+        this.players[0].clearWonCards();
+        this.players[1].clearWonCards();
+        // shuffle the deck
+        this.deck.shuffleDeck();
+        // deal cards to table
+        this.dealCardsToTable();
     }
 
     public void dealCardsToPlayers() {
         for(int i = 0; i < players.length; i++) {
             // remove three cards from deck and give it to player
-            for(int j = 0; j < 2; j++) {
+            for(int j = 0; j < 1; j++) {
                 this.players[i].addCardToCurrentHand(this.deck.dealCard(0));
             }
         }
     }
 
     public void dealCardsToTable() {
-        for(int i = 0; i < 2; i++) {
+        for(int i = 0; i < 1; i++) {
             this.currentTable.add(this.deck.getDeck().remove(0));
         }
     }
@@ -240,142 +356,10 @@ public class Game {
 
     public Card findPlayedCard(String playedCardIndex) {
         int index = Integer.valueOf(playedCardIndex);
-        Player player = this.getNextPlayerMove();
+        Player player = this.getCurrentPlayerMove();
         ArrayList<Card> playerHand = player.getCurrentHand();
 
         return playerHand.get(index);
-    }
-
-    public void handleNextTurn() {
-        // check if both players played all cards
-        boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
-
-        if(playersCurrentHandsEmpty) {
-            dealCardsToPlayers();
-            dealCardsToPlayers();
-            this.state = "next-deal-of-cards";
-        }
-        
-
-        // on every new turn, swap who is playing
-        if(this.playerMoveIndex == 0) {
-            this.playerMoveIndex = 1;
-        } else {
-            this.playerMoveIndex = 0;
-        }
-      
-
-        this.lastWinnerOfTablePoint = null;
-        this.playerMovePhase = 0;
-    }
-
-    public void handleNextRound() {
-        this.roundsPlayed++;
-        // reset more cards winner and table point winner after every round
-        this.lastWinnerOfMoreCards = null;
-        this.lastWinnerOfTablePoint = null;
-
-        // on every new round, swap who should play first
-        if(roundsPlayed % 2 == 0) {
-            this.playerMoveIndex = 0;
-        } else {
-            this.playerMoveIndex = 1;
-        }
-
-        // give last winner of round remaining cards, if any, from table
-        if(this.currentTable.size() > 0) {
-            this.lastWinnerInRound.clearLastWonCards();
-            this.lastWinnerInRound.winCards(this.currentTable);
-            addPointsToPlayer(this.lastWinnerInRound);
-            removeWonCardsFromTable(currentTable);
-        } else {
-            this.lastWinnerInRound = null;
-        }
-
-        // check which player has more total cards taken, and award them 3 points
-        int playerCardsWon = this.players[0].getCardsWonSize();
-        int cpuCardsWon = this.players[1].getCardsWonSize();
-        if(playerCardsWon > cpuCardsWon) {
-            this.lastWinnerOfMoreCards = players[0];
-            addPointsToPlayer(this.players[0], 3);
-        } else if(cpuCardsWon > playerCardsWon) {
-            this.lastWinnerOfMoreCards = players[1];
-            addPointsToPlayer(this.players[1], 3);
-        }
-        // collect cards to the deck
-        ArrayList<Card> playerCards = this.players[0].getCardsWon();
-        ArrayList<Card> cpuCards = this.players[1].getCardsWon();
-        this.deck.getDeck().addAll(playerCards);
-        this.deck.getDeck().addAll(cpuCards);
-        // reset player cards won
-        this.players[0].clearWonCards();
-        this.players[1].clearWonCards();
-        // shuffle the deck
-        this.deck.shuffleDeck();
-        // deal cards to players 
-        this.dealCardsToPlayers();
-        this.dealCardsToPlayers();
-        // deal cards to table
-        this.dealCardsToTable();
-        // start new round
-        this.playerMovePhase = 0;
-        this.state = "next-round";
-    }
-
-    public void handleCpuMovePhase0() {
-        Player cpu = getNextPlayerMove();
-        ArrayList<Card> cpuHand = cpu.getCurrentHand();
-        int max = cpuHand.size() - 1;
-        int min = 0;
-
-        int randomIndex = (int) (Math.random() * (max + 1));
-
-        Card randomCard = cpuHand.get(randomIndex);
-
-        // cpu play random card
-        cpu.playCard(randomCard);
-        // generate combinations
-        this.createWinningCombinations(randomCard);
-        // add played card to table
-        this.playCardToTable(randomCard);
-        // move to next phase
-        this.playerMovePhase = 1;
-
-    }
-
-    public void handleCpuMovePhase1() {
-        Player cpu = getNextPlayerMove();
-
-        int max = this.allCombinations.size() - 1;
-        int min = 0;
-
-        int randomIndex = (int) (Math.random() * (max + 1));
-
-        // no combinatinos can be won => move to next phase
-        if(this.allCombinations.size() == 0) {
-            this.playerMovePhase = 2;
-            cpu.clearLastWonCards();
-        } else {
-            // pick a correct combination that cpu choose and remove those cards from table and add them to player's won cards
-            // if cpu win all cards from table he gets one 'table point' which adds one total points
-            ArrayList<Card> pickedCombinations = this.allCombinations.get(randomIndex);
-            // give won cards to player
-            cpu.clearLastWonCards();
-            cpu.winCards(pickedCombinations);
-            addPointsToPlayer(cpu);
-            this.lastWinnerInRound = cpu;
-            // remove won cards from table
-            removeWonCardsFromTable(pickedCombinations);
-            // check if player won all cards from table
-            boolean tablePoint = checkTablePoint();
-            if(tablePoint) {
-                cpu.addTablePoint();
-                addPointsToPlayer(cpu, 1);
-                this.lastWinnerOfTablePoint = cpu;
-            }
-            // move to next phase
-            this.playerMovePhase = 2;
-        }
     }
 
     public boolean checkPlayersCurrentHand() {

@@ -85,4 +85,37 @@ public class Player {
     public void clearWonCards() {
         this.cardsWon.clear();
     }
+
+    // game actions by player
+    public void actionStart(Game game) {
+        game.updateGame(new GameInput(GameAction.START, null));
+    }
+
+    public void actionPlayCard(Game game, Object payload) {
+        game.updateGame(new GameInput(GameAction.PLAY_CARD, payload));
+    }
+
+    public void actionPickCombination(Game game, Object payload) {
+        game.updateGame(new GameInput(GameAction.PICK_COMBINATION, payload));
+    }
+
+    public void actionResolveTurn(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
+
+    public void actionRoundEnd(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
+
+    public void actionRoundStart(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
+
+    public void actionNextTurn(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
+
+    public void actionDealCards(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
 }

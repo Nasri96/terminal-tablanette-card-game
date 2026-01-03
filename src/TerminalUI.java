@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 public class TerminalUI {
     private Scanner scanner;
-    private Game game;
+    protected Game game;
 
     public TerminalUI(Game game) {
         this.scanner = new Scanner(System.in);
@@ -11,162 +11,131 @@ public class TerminalUI {
     }
 
     public void start() {
-        while(!this.game.getState().equals("game-over")) {
-            while(this.game.getState().equals("main-menu")) {
-                printMainMenu();
-                String commandInput = this.scanner.nextLine();
+        TerminalUICpu uiCpu = new TerminalUICpu(game);
 
-                if(commandInput.equals("quit")) {
-                    this.game.getInputFromUI(commandInput);
-                }
+        while(this.game.gameState != GameState.GAME_OVER) {
+            // if current player is cpu, process cpu inputs
+            Player currentPlayer = this.game.getCurrentPlayerMove();
+            if(currentPlayer instanceof PlayerCpu) {
+                uiCpu.processCpuInputs();
+                continue;
+            }
+
+            if(this.game.gameState == GameState.GAME_SETUP) {
+                printMainMenu();
+
+                String commandInput = this.scanner.nextLine();
 
                 if(commandInput.equals("rules")) {
                     printRules();
                 }
 
                 if(commandInput.equals("start")) {
-                    this.game.getInputFromUI(commandInput);
+                    Player player = this.game.getCurrentPlayerMove();
+                    player.actionStart(this.game);
                 }
             }
 
-            while(this.game.getState().equals("player-move")) {
-                if(this.game.getPlayerMovePhase() == 0) {
-                    Player player = this.game.getNextPlayerMove();
-                    if(player.getType().equals("player")) {
-                        printTable();
-                        
-                        System.out.println("------------------------");
-                        System.out.println("Play your card: (input needs to be same as it is shown in 'Your cards:')");
-                        String commandInput = this.scanner.nextLine();
+            if(this.game.gameState == GameState.TURN_PLAY_CARD) {
+                Player player = this.game.getCurrentPlayerMove();
+                printTable(); 
+                System.out.println("------------------------");
+                System.out.println("Play your card: (input needs to be same as it is shown in 'Your cards:')");
+                String commandInput = this.scanner.nextLine();
+                String playedCardIndex = validatePlayedCardInput(commandInput);
+                if(!playedCardIndex.equals("invalid")) {
+                    player.actionPlayCard(this.game, playedCardIndex);
+                } else {
+                    continue;
+                }
+            }
 
-                        if(commandInput.equals("quit")) {
-                            this.game.getInputFromUI(commandInput);
-                        }
+            if(this.game.gameState == GameState.TURN_PICK_COMBINATION) {
+                Player player = this.game.getCurrentPlayerMove();
+                ArrayList<Card> table = this.game.getCurrentTable();
+                printTable();
+                System.out.println("------------------------");
+                System.out.println("Played card: " + table.get(this.game.getCurrentTable().size() - 1));
+                printAllCombinations();
+                if(this.game.getAllCombinations().size() == 0) {
+                    System.out.println("You can't win any cards, press enter to continue:");
+                    String commandInput = this.scanner.nextLine();
+                    player.actionPickCombination(this.game, null);
 
-                        if(commandInput.equals("back")) {
-                            this.game.getInputFromUI("main-menu");
-                        }
-
-                        String playedCardIndex = validatePlayedCardInput(commandInput);
-                        if(!playedCardIndex.equals("invalid")) {
-                            this.game.getInputFromUI(playedCardIndex);
-                        } else {
-                            continue;
-                        }
-                        
-                    } else if(player.getType().equals("cpu")) {
-                        System.out.println("");
-                        printTable();
-                        System.out.println("------------------------");
-                        System.out.println("CPU is playing card...");
+                } else {
+                    while(true) {
+                        System.out.println("Type the corresponding number that represent cards that u want to win:");
 
                         try {
-                            Thread.sleep(1500);
-                        } catch(InterruptedException exception) {
-                            System.out.println("interrupted...");
-                        }
-                        this.game.getInputFromUI("cpu-move");
-                        
-                    }
+                            int commandInput = Integer.valueOf(scanner.nextLine());
 
-                } else if(this.game.getPlayerMovePhase() == 1) {
-                    Player player = this.game.getNextPlayerMove();
-                    if(player.getType().equals("player")) {
-                        ArrayList<Card> table = this.game.getCurrentTable();
-                        printTable();
-                        System.out.println("------------------------");
-                        System.out.println("Played card: " + table.get(this.game.getCurrentTable().size() - 1));
-                        printAllCombinations();
-                        if(this.game.getAllCombinations().size() == 0) {
-                            System.out.println("You can't win any cards, press enter to continue:");
-                            String commandInput = this.scanner.nextLine();
-
-                            if(commandInput.equals("quit")) {
-                                this.game.getInputFromUI(commandInput);
+                            if(commandInput >= 1 && commandInput <= this.game.getAllCombinations().size()) {
+                                // select index and pick combination
+                                player.actionPickCombination(this.game, commandInput - 1);
+                                break;
+                            } else if(commandInput == -1) {
+                                player.actionPickCombination(this.game, commandInput);
+                                break;
                             }
 
-                            if(commandInput.equals("back")) {
-                                this.game.getInputFromUI("main-menu");
-                            }
-
-                            this.game.getInputFromUI("");
-
-                        } else {
-                            while(true) {
-                                System.out.println("Type the corresponding number that represent cards that u want to win:");
-
-                                try {
-                                    int commandInput = Integer.valueOf(scanner.nextLine());
-
-                                    if(commandInput >= 1 && commandInput <= this.game.getAllCombinations().size()) {
-                                        this.game.getInputFromUI(String.valueOf(commandInput - 1));
-                                        break;
-                                    } else if(commandInput == -1) {
-                                        this.game.getInputFromUI(String.valueOf(commandInput));
-                                        break;
-                                    }
-
-                                } catch(NumberFormatException msg) {}
-                            }
-                        }
-                    } else if(player.getType().equals("cpu")) {
-                        printTable();
-                        System.out.println("------------------------");
-                        ArrayList<Card> table = this.game.getCurrentTable();
-                        System.out.println("CPU played card: " + table.get(table.size() - 1));
-                        System.out.println("CPU is picking card combination...");
-                        try {
-                            Thread.sleep(2000);
-                        } catch(InterruptedException exception) {
-                            System.out.println("interrupted...");
-                        }
-                        this.game.getInputFromUI("cpu-move");
+                        } catch(NumberFormatException msg) {}
                     }
-                    
-                    
-                } else if(this.game.getPlayerMovePhase() == 2) {
-                    printWonCards();
-                    printPointsAwarded();
-                    try {
-                        Thread.sleep(3000);
-                    } catch(InterruptedException exception) {
-                        System.out.println("interrupted...");
-                    }
-                    this.game.getInputFromUI("next-turn");
                 }
             }
-            while(this.game.getState().equals("next-deal-of-cards")) {
-                System.out.println("---------- END OF THE TURN ---------");
-                System.out.println("Dealing cards to players...");
-                try {
-                    Thread.sleep(2000);
-                } catch(InterruptedException exception) {
-                    System.out.println("interrupted...");
-                }
 
-                this.game.getInputFromUI("player-move");
+            if(this.game.gameState == GameState.TURN_RESOLVE) {
+                wait(500);
+                Player player = this.game.getCurrentPlayerMove();
+                printWonCards();
+                printPointsAwarded();
+                wait(1000);
+                player.actionResolveTurn(game);
             }
-            while(this.game.getState().equals("next-round")) {
-                printLastWinnerInRound();
+
+            if(this.game.gameState == GameState.ROUND_END) {
+                wait(500);
                 System.out.println("======== END OF THE ROUND ========");
-                try {
-                    Thread.sleep(1000);
-                } catch(InterruptedException exception) {
-                    System.out.println("interrupted...");
-                }
-                this.game.getInputFromUI("player-move");
+                wait(1000);
+                Player player = this.game.getCurrentPlayerMove();
+                player.actionRoundEnd(game);
             }
-            
+
+            if(this.game.gameState == GameState.ROUND_START) {
+                printLastWinnerInRound();
+                wait(500);
+                System.out.println("======== START OF THE ROUND ========");
+                wait(1000);
+                Player player = this.game.getCurrentPlayerMove();
+                player.actionRoundStart(game);
+            }
+
+            if(this.game.gameState == GameState.NEXT_TURN) {
+                wait(500);
+                System.out.println("--- SWITCHING PLAYERS ---");
+                wait(1000);
+                Player player = this.game.getCurrentPlayerMove();
+                player.actionNextTurn(game);
+            }
+
+            if(this.game.gameState == GameState.DEAL_CARDS) {
+                wait(500);
+                System.out.println("--- DEALING CARDS TO PLAYERS ---");
+                wait(1000);
+                Player player = this.game.getCurrentPlayerMove();
+                player.actionDealCards(game);
+            }
+
+
         }
     }
 
     public void printPlayerHand() {
-        Player player = this.game.getNextPlayerMove();
+        Player player = this.game.getCurrentPlayerMove();
         System.out.print(player.getCurrentHand());
     }
 
     public void printWonCards() {
-        Player player = this.game.getNextPlayerMove();
+        Player player = this.game.getCurrentPlayerMove();
         if(player.getLastCardsWon().size() > 0) {
             System.out.println(player.getType() + " won cards: " + player.getLastCardsWon());
         } else {
@@ -220,29 +189,20 @@ public class TerminalUI {
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
-            try {
-                Thread.sleep(1000);
-            } catch(InterruptedException exception) {
-                System.out.println("interrupted...");
-            }
+            wait(1000);
             System.out.println(lastWinner.getType() + " received " + newPoints + " points");
         }
-        try {
-            Thread.sleep(1000);
-        } catch(InterruptedException exception) {
-            System.out.println("interrupted...");
-        }
-
+        wait(1000);
         Player lastWinnerOfMoreCards = this.game.getLastWinnerOfMoreCards();
         if(lastWinnerOfMoreCards != null) {
             System.out.println(lastWinnerOfMoreCards.getType() + " awarded 3 points for winning more cards");
         }
-        
-
+        wait(500);
+        System.out.println(lastWinner.getType() + " has a total of " + lastWinner.getPointsWon() + " points");
     }
 
     public void printPointsAwarded() {
-        Player lastTurnWinner = this.game.getNextPlayerMove();
+        Player lastTurnWinner = this.game.getCurrentPlayerMove();
         Player lastWinnerOfTablePoint = this.game.getLastWinnerOfTablePoint();
 
         int newPoints = 0;
@@ -254,26 +214,13 @@ public class TerminalUI {
             }
 
             System.out.println(lastTurnWinner.getType() + " received " + newPoints + " points");
-            try {
-                Thread.sleep(1000);
-            } catch(InterruptedException exception) {
-                System.out.println("interrupted...");
-            }
+            wait(1000);
             // check if player scored table point
             if(lastWinnerOfTablePoint != null) {
                 System.out.println(lastWinnerOfTablePoint.getType() + " received " + 1 + " table point");
             }
-            try {
-                Thread.sleep(1000);
-            } catch(InterruptedException exception) {
-                System.out.println("interrupted...");
-            }
+            wait(1000);
             System.out.println(lastTurnWinner.getType() + " has a total of " + lastTurnWinner.getPointsWon() + " points");
-            try {
-                Thread.sleep(1000);
-            } catch(InterruptedException exception) {
-                System.out.println("interrupted...");
-            }
         }
     }
 
@@ -314,7 +261,7 @@ public class TerminalUI {
     public String validatePlayedCardInput(String input) {
         System.out.println("your input was > " + input);
         // check if input was correct and apply rules
-        Player player = this.game.getNextPlayerMove();
+        Player player = this.game.getCurrentPlayerMove();
         ArrayList<Card> playerHand = player.getCurrentHand();
         String[] cardInput = input.split("-"); // "split input like 5-d to 5 and d"
         
@@ -344,8 +291,8 @@ public class TerminalUI {
 
         String tableTitle = "TABLE";
         String gameStateTitle = "";
-        Player player = this.game.getNextPlayerMove();
-        if(!player.getType().equals("cpu") && this.game.getState().equals("player-move")) {
+        Player player = this.game.getCurrentPlayerMove();
+        if(!player.getType().equals("cpu")) {
             gameStateTitle = "Your cards:";
         }
 
@@ -379,15 +326,14 @@ public class TerminalUI {
                 }
 
                 // after table print rest of game state
-                if(this.game.getState().equals("player-move") && (this.game.getPlayerMovePhase() == 0 || this.game.getPlayerMovePhase() == 1)) {
-                    if(i == 1 && j == cols -1) {
-                        int lengthOfAllCards = getToStringLengthOfCards(this.game.getNextPlayerMove().getCurrentHand());
-                        printEmptySpaces(cols / 2 - lengthOfAllCards / 2);
-                        if(!player.getType().equals("cpu")) {
-                            printPlayerHand();
-                        }
+                if(i == 1 && j == cols -1) {
+                    int lengthOfAllCards = getToStringLengthOfCards(this.game.getCurrentPlayerMove().getCurrentHand());
+                    printEmptySpaces(cols / 2 - lengthOfAllCards / 2);
+                    if(!player.getType().equals("cpu")) {
+                        printPlayerHand();
                     }
                 }
+                
                 
 
             }
@@ -397,7 +343,7 @@ public class TerminalUI {
 
     public int getToStringLengthOfCards(ArrayList<Card> cards) {
         int lengthOfAllCards = 0;
-        for(Card card: this.game.getNextPlayerMove().getCurrentHand()) {
+        for(Card card: this.game.getCurrentPlayerMove().getCurrentHand()) {
             lengthOfAllCards+= card.getToStringLength();
         }
 
@@ -447,6 +393,14 @@ public class TerminalUI {
     public void printEmptySpaces(int spaces) {
         for(int i = 0; i < spaces; i++) {
             System.out.print(" ");
+        }
+    }
+
+    public void wait(int miliseconds) {
+        try {
+            Thread.sleep(miliseconds);
+        } catch(InterruptedException exception) {
+            System.out.println("interrupted...");
         }
     }
 }

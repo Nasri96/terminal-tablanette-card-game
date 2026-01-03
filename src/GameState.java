@@ -1,0 +1,11 @@
+public enum GameState {
+    GAME_SETUP,
+    TURN_PLAY_CARD,
+    TURN_PICK_COMBINATION,
+    TURN_RESOLVE,
+    ROUND_END,
+    ROUND_START,
+    NEXT_TURN,
+    DEAL_CARDS,
+    GAME_OVER
+}
