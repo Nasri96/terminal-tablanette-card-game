@@ -1,15 +1,15 @@
 import java.util.ArrayList;
 
 public class Player {
-    private String type;
+    private String name;
     private ArrayList<Card> cardsWon;
     private ArrayList<Card> lastCardsWon;
     private ArrayList<Card> currentHand;
     private int pointsWon;
     private int tablePoints;
 
-    public Player(String type) {
-        this.type = type;
+    public Player(String name) {
+        this.name = name;
         this.cardsWon = new ArrayList<Card>();
         this.lastCardsWon = new ArrayList<Card>();
         this.currentHand = new ArrayList<Card>();
@@ -17,8 +17,8 @@ public class Player {
         this.tablePoints = 0;
     }
 
-    public String getType() {
-        return this.type;
+    public String getName() {
+        return this.name;
     }
 
     public ArrayList<Card> getCurrentHand() {
@@ -58,14 +58,14 @@ public class Player {
     }
 
     public void printCurrentHand() {
-        System.out.println(this.type + " HAND CARDS: ");
+        System.out.println(this.name + " HAND CARDS: ");
         for(Card card: currentHand) {
             System.out.println(card);
         }
     }
 
     public void printWonCards() {
-        System.out.println(this.type + " WON CARDS: " + lastCardsWon);
+        System.out.println(this.name + " WON CARDS: " + lastCardsWon);
     }
 
     public void playCard(Card card) {

@@ -19,7 +19,7 @@ public class TerminalUICpu extends TerminalUI {
                 this.printTable();
                 this.wait(500);
                 System.out.println("------------------------");
-                System.out.println("CPU is playing card...");
+                System.out.println(cpu.getName() + " is playing card...");
                 this.game.ui.wait(1500);
 
                 cpu.actionPlayCard(this.game, null);
@@ -29,8 +29,8 @@ public class TerminalUICpu extends TerminalUI {
                 this.printTable();
                 System.out.println("------------------------");
                 ArrayList<Card> table = game.getCurrentTable();
-                System.out.println("CPU played card: " + table.get(table.size() - 1));
-                System.out.println("CPU is picking card combination...");
+                System.out.println(cpu.getName() + " played card: " + table.get(table.size() - 1));
+                System.out.println(cpu.getName() + " is picking card combination...");
                 this.wait(2000);
 
                 cpu.actionPickCombination(this.game, null);

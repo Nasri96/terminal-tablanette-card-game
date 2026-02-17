@@ -2,8 +2,8 @@ import java.util.ArrayList;
 
 public class PlayerCpu extends Player {
     
-    public PlayerCpu(String type) {
-        super(type);
+    public PlayerCpu(String name) {
+        super(name);
     }
 
 

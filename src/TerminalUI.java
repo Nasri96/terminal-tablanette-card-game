@@ -137,9 +137,9 @@ public class TerminalUI {
     public void printWonCards() {
         Player player = this.game.getCurrentPlayerMove();
         if(player.getLastCardsWon().size() > 0) {
-            System.out.println(player.getType() + " won cards: " + player.getLastCardsWon());
+            System.out.println(player.getName() + " won cards: " + player.getLastCardsWon());
         } else {
-            System.out.println(player.getType() + " did not win any cards.");
+            System.out.println(player.getName() + " did not win any cards.");
         }
     }
 
@@ -184,21 +184,21 @@ public class TerminalUI {
         
         int newPoints = 0;
         if(lastWinner != null) {
-            System.out.println(lastWinner.getType() + " carries the last cards from table " + lastWinner.getLastCardsWon());
+            System.out.println(lastWinner.getName() + " carries the last cards from table " + lastWinner.getLastCardsWon());
             ArrayList<Card> wonCards = lastWinner.getLastCardsWon();
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
             wait(1000);
-            System.out.println(lastWinner.getType() + " received " + newPoints + " points");
+            System.out.println(lastWinner.getName() + " received " + newPoints + " points");
         }
         wait(1000);
         Player lastWinnerOfMoreCards = this.game.getLastWinnerOfMoreCards();
         if(lastWinnerOfMoreCards != null) {
-            System.out.println(lastWinnerOfMoreCards.getType() + " awarded 3 points for winning more cards");
+            System.out.println(lastWinnerOfMoreCards.getName() + " awarded 3 points for winning more cards");
         }
         wait(500);
-        System.out.println(lastWinner.getType() + " has a total of " + lastWinner.getPointsWon() + " points");
+        System.out.println(lastWinner.getName() + " has a total of " + lastWinner.getPointsWon() + " points");
     }
 
     public void printPointsAwarded() {
@@ -213,14 +213,14 @@ public class TerminalUI {
                 newPoints+= card.getPoints();
             }
 
-            System.out.println(lastTurnWinner.getType() + " received " + newPoints + " points");
+            System.out.println(lastTurnWinner.getName() + " received " + newPoints + " points");
             wait(1000);
             // check if player scored table point
             if(lastWinnerOfTablePoint != null) {
-                System.out.println(lastWinnerOfTablePoint.getType() + " received " + 1 + " table point");
+                System.out.println(lastWinnerOfTablePoint.getName() + " received " + 1 + " table point");
             }
             wait(1000);
-            System.out.println(lastTurnWinner.getType() + " has a total of " + lastTurnWinner.getPointsWon() + " points");
+            System.out.println(lastTurnWinner.getName() + " has a total of " + lastTurnWinner.getPointsWon() + " points");
         }
     }
 
@@ -292,7 +292,8 @@ public class TerminalUI {
         String tableTitle = "TABLE";
         String gameStateTitle = "";
         Player player = this.game.getCurrentPlayerMove();
-        if(!player.getType().equals("cpu")) {
+        System.out.println();
+        if(!(player instanceof PlayerCpu)) {
             gameStateTitle = "Your cards:";
         }
 
@@ -329,7 +330,7 @@ public class TerminalUI {
                 if(i == 1 && j == cols -1) {
                     int lengthOfAllCards = getToStringLengthOfCards(this.game.getCurrentPlayerMove().getCurrentHand());
                     printEmptySpaces(cols / 2 - lengthOfAllCards / 2);
-                    if(!player.getType().equals("cpu")) {
+                    if(!(player instanceof PlayerCpu)) {
                         printPlayerHand();
                     }
                 }

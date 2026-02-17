@@ -306,18 +306,19 @@ public class Game {
     public void dealCardsToPlayers() {
         for(int i = 0; i < players.length; i++) {
             // remove three cards from deck and give it to player
-            for(int j = 0; j < 3; j++) {
+            for(int j = 0; j < 1; j++) {
                 this.players[i].addCardToCurrentHand(this.deck.dealCard(0));
             }
         }
     }
 
     public void dealCardsToTable() {
-        for(int i = 0; i < 3; i++) {
+        for(int i = 0; i < 1; i++) {
             this.currentTable.add(this.deck.dealCard(0));
         }
 
-        this.currentTable.add(this.deck.dealCard("A"));
+        // force ACE into table
+        // this.currentTable.add(this.deck.dealCard("A"));
     }
 
     public void playCardToTable(Card card) {
@@ -606,7 +607,7 @@ public class Game {
             }
 
             for(Set<Card> multiAddition: multiAdditionsCopy) {
-                // check for ACE overlap where one SAME ace can be in equals and additions
+                // check for ACE overlap where one SAME ace can be in equals and multi additions
                 if(isAceOverlapping(equals, multiAddition)) {
                     continue;
                 }

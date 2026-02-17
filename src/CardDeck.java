@@ -14,7 +14,7 @@ public class CardDeck {
     private ArrayList<Card> createDeck() {
         ArrayList<Card> newDeck = new ArrayList<>();
         // create cards from 2 - K symbols for all suits
-        for(int i = 0; i < suits.length; i++) {
+        for(int i = 0; i < suits.length - 3; i++) {
             // cards 2-9 give 0 points, exception is 2 club which awards one point, rest 10-K are one point with exception of 10 diamond which is two points
             for(int j = 0; j < symbols.length; j++) {
                 if(j < 8) {
