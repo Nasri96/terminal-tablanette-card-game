@@ -1,3 +1,5 @@
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class Card {
@@ -23,6 +25,15 @@ public class Card {
 
     public int getValue() {
         return this.value;
+    }
+
+    // new way to handle card value(s), it is always this.value unless the card is ACE, which can be 1 or 11
+    public List<Integer> getPossibleValues() {
+        if(this.symbol.equals("A")) {
+            return Arrays.asList(1, 11);
+        } else {
+            return List.of(this.value);
+        }
     }
 
     public int getPoints() {

@@ -306,16 +306,18 @@ public class Game {
     public void dealCardsToPlayers() {
         for(int i = 0; i < players.length; i++) {
             // remove three cards from deck and give it to player
-            for(int j = 0; j < 1; j++) {
+            for(int j = 0; j < 3; j++) {
                 this.players[i].addCardToCurrentHand(this.deck.dealCard(0));
             }
         }
     }
 
     public void dealCardsToTable() {
-        for(int i = 0; i < 1; i++) {
-            this.currentTable.add(this.deck.getDeck().remove(0));
+        for(int i = 0; i < 3; i++) {
+            this.currentTable.add(this.deck.dealCard(0));
         }
+
+        this.currentTable.add(this.deck.dealCard("A"));
     }
 
     public void playCardToTable(Card card) {
@@ -506,13 +508,13 @@ public class Game {
         mergeMapCombinations(playedCard);
 
         // System.out.println("EQUAL COMBINATIONS:");
-        // System.out.println(this.equalCombinations);
+        // System.out.println(this.mapCombinations.get("equals"));
         // System.out.println("ADDITION COMBINATIONS:");
-        // System.out.println(this.additionCombinations);
+        // System.out.println(this.mapCombinations.get("additions"));
         // System.out.println("MULTI ADDITION COMBINATIONS:");
-        // System.out.println(this.multiAdditionCombinations);
+        // System.out.println(this.mapCombinations.get("multiAdditions"));
         // System.out.println("EQUAL COMBINED COMBINATIONS:");
-        // System.out.println(this.equalsCombinedCombinations);
+        // System.out.println(this.mapCombinations.get("equalsCombined"));
         // System.out.println("ALL COMBINATIONS:");
         // System.out.println(this.allCombinations);
     }
@@ -538,7 +540,14 @@ public class Game {
         Card card = currentTable.get(currentI);
         currentCombination.add(card);
 
-        additionCombinationsRecursion(currentI + 1, currentCombination, totalSum + card.getValue(), targetSum);
+        
+        // cards are always one value unless the card is ACE which can be both 1 or 11
+        for(int value: card.getPossibleValues()) {
+            if(totalSum + value <= targetSum) {
+                additionCombinationsRecursion(currentI + 1, currentCombination, totalSum + value, targetSum);
+            }
+        }
+
         currentCombination.remove(currentCombination.size() - 1);
         additionCombinationsRecursion(currentI + 1, currentCombination, totalSum, targetSum);
     }
@@ -587,18 +596,41 @@ public class Game {
 
         for(Set<Card> equals: equalsCopy) {
             for(Set<Card> addition: additionsCopy) {
+                // check for ACE overlap where one SAME ace can be in equals and additions
+                if(isAceOverlapping(equals, addition)) {
+                    continue;
+                }
                 Set<Card> additionEquals = new LinkedHashSet<>(addition);
                 additionEquals.addAll(equals);
                 this.addToCombinations(additionEquals, "equalsCombined");
             }
 
             for(Set<Card> multiAddition: multiAdditionsCopy) {
+                // check for ACE overlap where one SAME ace can be in equals and additions
+                if(isAceOverlapping(equals, multiAddition)) {
+                    continue;
+                }
                 Set<Card> multiAdditionEquals = new LinkedHashSet<>(multiAddition);
                 multiAdditionEquals.addAll(equals);
                 this.addToCombinations(multiAdditionEquals, "equalsCombined");
             }
         }
 
+    }
+
+    // checks and prevents if there is overlap with 1 and 11 rule where ACE can have two values 1 or 11, example:
+    // equals = [A-d] additions = [7-d, A-d, 3-c], now in findEqualsCombinedCombinations() there will be overlap
+    // findEqualsCombinedCombinations() merges [A-d] with [7-d, A-d, 3-c] => Set prevents [A-d, 7-d, A-d, 3-c] so the combination ends up [7-d, A-d, 3-c] which is SAME as valid addition combination
+    public boolean isAceOverlapping(Set<Card> equals, Set<Card> additionsMultiAdditions) {
+        boolean overlap = false;
+        for(Card c: equals) {
+            if(additionsMultiAdditions.contains(c)) {
+                overlap = true;
+                break;
+            }
+        }
+        
+        return overlap;
     }
 
     public void clearCombinations() {

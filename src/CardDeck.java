@@ -14,7 +14,7 @@ public class CardDeck {
     private ArrayList<Card> createDeck() {
         ArrayList<Card> newDeck = new ArrayList<>();
         // create cards from 2 - K symbols for all suits
-        for(int i = 0; i < suits.length - 3; i++) {
+        for(int i = 0; i < suits.length; i++) {
             // cards 2-9 give 0 points, exception is 2 club which awards one point, rest 10-K are one point with exception of 10 diamond which is two points
             for(int j = 0; j < symbols.length; j++) {
                 if(j < 8) {
@@ -51,6 +51,18 @@ public class CardDeck {
 
     public Card dealCard(int i) {
         return this.deck.remove(i);
+    }
+
+    // force dealing card of given symbol
+    public Card dealCard(String symbol) {
+        for(Card card: this.deck) {
+            if(card.getSymbol().equals(symbol)) {
+                this.deck.remove(card);
+                return card;
+            }
+        }
+
+        return this.deck.remove(0);
     }
 
     public void printDeck() {
