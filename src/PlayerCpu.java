@@ -78,4 +78,12 @@ public class PlayerCpu extends Player {
         super.actionDealCards(game);
     }
 
+    public void actionGameOver(Game game) {
+        super.actionGameOver(game);
+    }
+
+    public void actionGameEnd(Game game) {
+        super.actionGameEnd(game);
+    }
+
 }

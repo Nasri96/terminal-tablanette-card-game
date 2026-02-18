@@ -10,19 +10,15 @@ public class Player {
 
     public Player(String name) {
         this.name = name;
-        this.cardsWon = new ArrayList<Card>();
-        this.lastCardsWon = new ArrayList<Card>();
-        this.currentHand = new ArrayList<Card>();
+        this.cardsWon = new ArrayList<>();
+        this.lastCardsWon = new ArrayList<>();
+        this.currentHand = new ArrayList<>();
         this.pointsWon = 0;
         this.tablePoints = 0;
     }
 
     public String getName() {
         return this.name;
-    }
-
-    public ArrayList<Card> getCurrentHand() {
-        return this.currentHand;
     }
 
     public ArrayList<Card> getCardsWon() {
@@ -33,12 +29,32 @@ public class Player {
         return this.cardsWon.size();
     }
 
+    public void clearWonCards() {
+        this.cardsWon.clear();
+    }
+
     public ArrayList<Card> getLastCardsWon() {
         return this.lastCardsWon;
     }
 
+    public void clearLastWonCards() {
+        this.lastCardsWon.clear();
+    }
+
+    public ArrayList<Card> getCurrentHand() {
+        return this.currentHand;
+    }
+
+    public void addCardToCurrentHand(Card card) {
+        this.currentHand.add(card);
+    }
+
     public int getPointsWon() {
         return this.pointsWon;
+    }
+
+    public int getTablePoints() {
+        return this.tablePoints;
     }
 
     public void setPoints(int points) {
@@ -47,25 +63,6 @@ public class Player {
 
     public void addTablePoint() {
         this.tablePoints++;
-    }
-
-    public int getTablePoints() {
-        return this.tablePoints;
-    }
-
-    public void addCardToCurrentHand(Card card) {
-        this.currentHand.add(card);
-    }
-
-    public void printCurrentHand() {
-        System.out.println(this.name + " HAND CARDS: ");
-        for(Card card: currentHand) {
-            System.out.println(card);
-        }
-    }
-
-    public void printWonCards() {
-        System.out.println(this.name + " WON CARDS: " + lastCardsWon);
     }
 
     public void playCard(Card card) {
@@ -78,12 +75,32 @@ public class Player {
         this.lastCardsWon.addAll(wonCards);
     }
 
-    public void clearLastWonCards() {
-        this.lastCardsWon.clear();
+    public void reset() {
+        this.cardsWon = new ArrayList<>();
+        this.lastCardsWon = new ArrayList<>();
+        this.currentHand = new ArrayList<>();
+        this.pointsWon = 0;
+        this.tablePoints = 0;
+        printFields();
     }
 
-    public void clearWonCards() {
-        this.cardsWon.clear();
+    public void printFields() {
+        System.out.println("player name: " + this.name);
+        System.out.println("player lastCardsWon: " + this.lastCardsWon);
+        System.out.println("player currentHand: " + this.currentHand);
+        System.out.println("player pointsWon: " + this.pointsWon);
+        System.out.println("player tablePoints: " + this.tablePoints);
+    }
+
+    public void printCurrentHand() {
+        System.out.println(this.name + " HAND CARDS: ");
+        for(Card card: currentHand) {
+            System.out.println(card);
+        }
+    }
+
+    public void printWonCards() {
+        System.out.println(this.name + " WON CARDS: " + lastCardsWon);
     }
 
     // game actions by player
@@ -99,6 +116,7 @@ public class Player {
         game.updateGame(new GameInput(GameAction.PICK_COMBINATION, payload));
     }
 
+    // AUTOMATIC ACTIONS
     public void actionResolveTurn(Game game) {
         game.updateGame(new GameInput(GameAction.CONTINUE, null));
     }
@@ -116,6 +134,14 @@ public class Player {
     }
 
     public void actionDealCards(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
+
+    public void actionGameOver(Game game) {
+        game.updateGame(new GameInput(GameAction.CONTINUE, null));
+    }
+
+    public void actionGameEnd(Game game) {
         game.updateGame(new GameInput(GameAction.CONTINUE, null));
     }
 }

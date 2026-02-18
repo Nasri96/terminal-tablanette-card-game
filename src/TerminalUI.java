@@ -13,7 +13,7 @@ public class TerminalUI {
     public void start() {
         TerminalUICpu uiCpu = new TerminalUICpu(game);
 
-        while(this.game.gameState != GameState.GAME_OVER) {
+        while(true) {
             // if current player is cpu, process cpu inputs
             Player currentPlayer = this.game.getCurrentPlayerMove();
             if(currentPlayer instanceof PlayerCpu) {
@@ -125,6 +125,30 @@ public class TerminalUI {
                 player.actionDealCards(game);
             }
 
+            if(this.game.gameState == GameState.GAME_OVER) {
+                // checks if game was over after the ROUND_END state
+                if(this.game.getRoundChanged()) {
+                    printLastWinnerInRound();
+                }
+                wait(500);
+                System.out.println("--- GAME OVER ---");
+                wait(500);
+                Player player = this.game.getCurrentPlayerMove();
+                player.actionGameOver(game);
+            }
+
+            if(this.game.gameState == GameState.GAME_END) {
+                wait(500);
+                System.out.println("--- GAME DETAILS ---");
+                wait(500);
+                printGameEnd();
+                System.out.println("Type 'continue' to end the game");
+                System.out.print("> ");
+                validateTextInput("continue");
+                Player player = this.game.getCurrentPlayerMove();
+                player.actionGameEnd(game);
+            }
+
 
         }
     }
@@ -224,6 +248,13 @@ public class TerminalUI {
         }
     }
 
+    public void printGameEnd() {
+        Player winner = this.game.getGameOverPlayers().get("winner");
+        Player loser = this.game.getGameOverPlayers().get("loser");
+        System.out.println("Winner: " + winner.getName() + ", points won: " + winner.getPointsWon() + ", cards won: " + winner.getCardsWon());
+        System.out.println("Loser: " + loser.getName() + ", points won: " + loser.getPointsWon() + ", cards won: " + loser.getCardsWon());
+    }
+
     public void printMainMenu() {
         System.out.println("---- Tablanette Game ----");
         System.out.println(">> Start Game - type 'start'");
@@ -278,6 +309,14 @@ public class TerminalUI {
         }
 
         return "invalid";
+    }
+
+    public void validateTextInput(String textToValidate) {
+        String input = "";
+
+        while(!input.equals(textToValidate)) {
+            input = this.scanner.nextLine();
+        }
     }
 
     public void printTable() {

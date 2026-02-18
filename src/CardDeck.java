@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 
 public class CardDeck {
     private char[] suits = { 'c', 'd', 'h', 's' };
@@ -41,6 +42,11 @@ public class CardDeck {
         return newDeck;
     }
 
+    public void resetDeck() {
+        this.deck = createDeck();
+        printDeck();
+    }
+
     public ArrayList<Card> getDeck() {
         return this.deck;
     }
@@ -66,7 +72,8 @@ public class CardDeck {
     }
 
     public void printDeck() {
-        System.out.println("DECK SIZE: " + this.deck.size());
+        System.out.println("deck size: " + this.deck.size());
+        System.out.println("deck: " + this.deck);
         for(Card card: this.deck) {
             // System.out.println("Card suit: " + card.getSuit() + ", card symbol: " + card.getSymbol()+ ", card value: " + card.getValue() + ", card points: " + card.getPoints());
             // System.out.println(card);

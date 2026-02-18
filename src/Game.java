@@ -6,13 +6,13 @@ import java.util.Set;
 public class Game {
     private CardDeck deck;
     private int playerMoveIndex;
-    private int playerMovePhase;
     private int roundsPlayed;
     private boolean roundChanged;
     private int winningScore;
     private Player lastWinnerInRound;
     private Player lastWinnerOfMoreCards;
     private Player lastWinnerOfTablePoint;
+    private HashMap<String, Player> gameOverPlayers;
     private ArrayList<ArrayList<Card>> allCombinations;
     private HashMap<String, Set<Set<Card>>> mapCombinations;
     private Player[] players;
@@ -24,27 +24,23 @@ public class Game {
         this.deck = deck;
         // next player move index can be 0 or 1, as two players max can play the game
         this.playerMoveIndex = 0;
-        this.playerMovePhase = 0;
         this.roundsPlayed = 0;
         this.roundChanged = false;
-        this.winningScore = 10;
+        this.winningScore = 8;
         this.lastWinnerInRound = null;
         this.lastWinnerOfMoreCards = null;
         this.lastWinnerOfTablePoint = null;
+        this.gameOverPlayers = new HashMap<>();
         this.allCombinations = new ArrayList<>();
         this.mapCombinations = new HashMap<>();
         this.players = players;
-        this.currentTable = new ArrayList<Card>();
+        this.currentTable = new ArrayList<>();
         this.gameState = GameState.GAME_SETUP;
         this.ui = null;
     }
 
     public void setUi(TerminalUI ui) {
         this.ui = ui;
-    }
-
-    public int getPlayerMovePhase() {
-        return this.playerMovePhase;
     }
 
     public CardDeck getDeck() {
@@ -63,6 +59,10 @@ public class Game {
         return this.allCombinations;
     }
 
+    public boolean getRoundChanged() {
+        return this.roundChanged;
+    }
+
     public Player getLastWinnerInRound() {
         return this.lastWinnerInRound;
     }
@@ -73,6 +73,10 @@ public class Game {
 
     public Player getLastWinnerOfTablePoint() {
         return this.lastWinnerOfTablePoint;
+    }
+
+    public HashMap<String, Player> getGameOverPlayers() {
+        return this.gameOverPlayers;
     }
 
     public void startGame(TerminalUI ui) {
@@ -121,6 +125,12 @@ public class Game {
             case ROUND_END:
                 if(input.action == GameAction.CONTINUE) {
                     handleRoundEnd();
+                    // game over possible also possible after round end
+                    if(this.isGameOver()) {
+                        this.gameState = GameState.GAME_OVER;
+                        break;
+                    }
+
                     this.gameState = GameState.ROUND_START;
                 }
 
@@ -158,15 +168,26 @@ public class Game {
             
             // to do later
             case GAME_OVER:
-                this.gameState = GameState.GAME_OVER;
+                if(input.action == GameAction.CONTINUE) {
+                    handleGameOver();
+                    this.gameState = GameState.GAME_END;
+                }
                 
+                break;
+            
+            case GAME_END:
+                if(input.action == GameAction.CONTINUE) {
+                    handleGameEnd();
+                    this.gameState = GameState.GAME_SETUP;
+                }
 
+                break;
                 
         }
 
     }
 
-    public void handleStart() {
+    private void handleStart() {
         // shuffle the deck
         this.deck.shuffleDeck();
         // deal cards, three cards to each player in two rounds, then four cards to the table
@@ -178,7 +199,7 @@ public class Game {
         this.initializeCombinations();
     }
 
-    public void handlePlayCard(Object payload) {
+    private void handlePlayCard(Object payload) {
         Player player = this.getCurrentPlayerMove();
         // find which card is played
         Card playedCard = findPlayedCard(String.valueOf(payload));
@@ -190,7 +211,7 @@ public class Game {
         this.playCardToTable(playedCard);
     }
 
-    public void handlePickCombination(Object payload) {
+    private void handlePickCombination(Object payload) {
         Player player = this.getCurrentPlayerMove();
         // no combinatinos can be won => move to next phase
         if(this.allCombinations.size() == 0) {
@@ -220,7 +241,12 @@ public class Game {
         }
     }
 
-    public GameState handleResolveTurn() {
+    private GameState handleResolveTurn() {
+        // check for game over first
+        if(isGameOver()) {
+            return GameState.GAME_OVER;
+        }
+
         boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
         boolean deckIsEmpty = checkPlayingDeckIsEmpty();
 
@@ -231,12 +257,22 @@ public class Game {
         return GameState.NEXT_TURN;
     }
 
-    public void handleDealCards() {
+    private boolean isGameOver() {
+        for(Player player: this.players) {
+            if(player.getPointsWon() >= this.winningScore) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void handleDealCards() {
         this.dealCardsToPlayers();
         this.dealCardsToPlayers();
     }
 
-    public void handleNewNextTurn() {
+    private void handleNewNextTurn() {
         // on every new turn, swap who is playing
         if(this.playerMoveIndex == 0) {
             this.playerMoveIndex = 1;
@@ -244,7 +280,7 @@ public class Game {
             this.playerMoveIndex = 0;
         }
 
-        // on every new round, swap who should play first (override previous if only if round is changed)
+        // on every new round, swap who should play first (override previous only if round is changed)
         if(this.roundChanged) {
             if(roundsPlayed % 2 == 0) {
                 this.playerMoveIndex = 0;
@@ -259,21 +295,24 @@ public class Game {
         this.lastWinnerOfTablePoint = null;
     }
 
-    public void handleRoundEnd() {
+    private void handleRoundEnd() {
         this.roundsPlayed++;
         this.roundChanged = true;
         // reset more cards winner and table point winner after every round
         this.lastWinnerOfMoreCards = null;
         this.lastWinnerOfTablePoint = null;
 
-        // give last winner of round remaining cards, if any, from table
-        if(this.currentTable.size() > 0) {
-            this.lastWinnerInRound.clearLastWonCards();
-            this.lastWinnerInRound.winCards(this.currentTable);
-            addPointsToPlayer(this.lastWinnerInRound);
-            removeWonCardsFromTable(currentTable);
-        } else {
-            this.lastWinnerInRound = null;
+        if(this.lastWinnerInRound != null) {
+            // give last winner of round remaining cards, if any, from table
+            if(this.currentTable.size() > 0) {
+                this.lastWinnerInRound.clearLastWonCards();
+                this.lastWinnerInRound.winCards(this.currentTable);
+                addPointsToPlayer(this.lastWinnerInRound);
+                removeWonCardsFromTable(currentTable);
+            } else {
+                this.lastWinnerInRound = null;
+            }
+
         }
 
         // check which player has more total cards taken, and award them 3 points
@@ -286,9 +325,10 @@ public class Game {
             this.lastWinnerOfMoreCards = players[1];
             addPointsToPlayer(this.players[1], 3);
         }
+        
     }
 
-    public void handleRoundStart() {
+    private void handleRoundStart() {
         // collect cards to the deck
         ArrayList<Card> playerCards = this.players[0].getCardsWon();
         ArrayList<Card> cpuCards = this.players[1].getCardsWon();
@@ -303,7 +343,40 @@ public class Game {
         this.dealCardsToTable();
     }
 
-    public void dealCardsToPlayers() {
+    private void handleGameOver() {
+        for(Player player: this.players) {
+            if(player.getPointsWon() >= this.winningScore) {
+                this.gameOverPlayers.put("winner", player);
+            } else {
+                this.gameOverPlayers.put("loser", player);
+            }
+        }
+    }
+
+    private void handleGameEnd() {
+        // reset game
+        this.playerMoveIndex = 0;
+        this.roundsPlayed = 0;
+        this.roundChanged = false;
+        this.lastWinnerInRound = null;
+        this.lastWinnerOfMoreCards = null;
+        this.lastWinnerOfTablePoint = null;
+        this.gameOverPlayers.clear();
+        this.clearCombinations();
+        this.currentTable = new ArrayList<>();
+
+        // reset players
+        for(Player player: this.players) {
+            player.reset();
+        }
+
+        // reset deck
+        this.deck.resetDeck();
+
+
+    }
+
+    private void dealCardsToPlayers() {
         for(int i = 0; i < players.length; i++) {
             // remove three cards from deck and give it to player
             for(int j = 0; j < 1; j++) {
@@ -312,7 +385,7 @@ public class Game {
         }
     }
 
-    public void dealCardsToTable() {
+    private void dealCardsToTable() {
         for(int i = 0; i < 1; i++) {
             this.currentTable.add(this.deck.dealCard(0));
         }
@@ -321,11 +394,11 @@ public class Game {
         // this.currentTable.add(this.deck.dealCard("A"));
     }
 
-    public void playCardToTable(Card card) {
+    private void playCardToTable(Card card) {
         this.currentTable.add(card);
     }
 
-    public void addPointsToPlayer(Player player) {
+    private void addPointsToPlayer(Player player) {
         int newPoints = 0;
         ArrayList<Card> wonCards = player.getLastCardsWon();
 
@@ -336,15 +409,15 @@ public class Game {
         player.setPoints(newPoints);
     }
 
-    public void addPointsToPlayer(Player player, int points) {
+    private void addPointsToPlayer(Player player, int points) {
         player.setPoints(points);
     }
 
-    public boolean checkTablePoint() {
+    private boolean checkTablePoint() {
         return this.currentTable.isEmpty();
     }
 
-    public void removeWonCardsFromTable(ArrayList<Card> wonCards) {
+    private void removeWonCardsFromTable(ArrayList<Card> wonCards) {
         ArrayList<Card> currentTableCopy = new ArrayList<>(this.currentTable);
         for(int i = 0; i < currentTableCopy.size(); i++) {
             Card currentCard = currentTableCopy.get(i);
@@ -357,7 +430,7 @@ public class Game {
         }
     }
 
-    public Card findPlayedCard(String playedCardIndex) {
+    private Card findPlayedCard(String playedCardIndex) {
         int index = Integer.valueOf(playedCardIndex);
         Player player = this.getCurrentPlayerMove();
         ArrayList<Card> playerHand = player.getCurrentHand();
@@ -365,7 +438,7 @@ public class Game {
         return playerHand.get(index);
     }
 
-    public boolean checkPlayersCurrentHand() {
+    private boolean checkPlayersCurrentHand() {
         Player[] players = this.players;
 
         boolean bothCurrentHands = true;
@@ -379,7 +452,7 @@ public class Game {
         return bothCurrentHands;
     }
 
-    public boolean checkPlayingDeckIsEmpty() {
+    private boolean checkPlayingDeckIsEmpty() {
         if(this.deck.getDeck().size() == 0) {
             return true;
         }
@@ -387,7 +460,7 @@ public class Game {
         return false;
     }
 
-    public ArrayList<Card> findPickedCombination(String allCombinationsInputIndex) {
+    private ArrayList<Card> findPickedCombination(String allCombinationsInputIndex) {
         int inputIndex = Integer.valueOf(allCombinationsInputIndex);
 
         // return empty list if player choose to play card only
@@ -398,14 +471,14 @@ public class Game {
         return allCombinations.get(inputIndex);
     }
 
-    public void initializeCombinations() {
+    private void initializeCombinations() {
         this.mapCombinations.put("equals", new LinkedHashSet<>());
         this.mapCombinations.put("additions", new LinkedHashSet<>());
         this.mapCombinations.put("multiAdditions", new LinkedHashSet<>());
         this.mapCombinations.put("equalsCombined", new LinkedHashSet<>());
     }
 
-    public void mergeMapCombinations(Card playedCard) {
+    private void mergeMapCombinations(Card playedCard) {
         ArrayList<ArrayList<Card>> mergedList = new ArrayList<>();
         // merge 
         for(String combo: this.mapCombinations.keySet()) {
@@ -433,7 +506,7 @@ public class Game {
     }
 
     // manages equal, addition, multiAddition and equalsCombined combinations
-    public void addToCombinations(Set<Card> combination, String combinationId) {
+    private void addToCombinations(Set<Card> combination, String combinationId) {
         if(combinationId.equals("equals")) {
             Set<Set<Card>> equals = this.mapCombinations.get(combinationId);
             equals.add(combination);
@@ -449,7 +522,7 @@ public class Game {
         }
     }
 
-    public void createWinningCombinations(Card playedCard) {
+    private void createWinningCombinations(Card playedCard) {
         // reset all combinations
         clearCombinations();
 
@@ -521,11 +594,11 @@ public class Game {
     }
 
     // generates all unique combinations where value of n cards == played card value
-    public void findAdditionCombinations(int targetSum) {
+    private void findAdditionCombinations(int targetSum) {
         additionCombinationsRecursion(0, new ArrayList<>(), 0, targetSum);
     }
 
-    public void additionCombinationsRecursion(int currentI, ArrayList<Card> currentCombination, int totalSum, int targetSum) {
+    private void additionCombinationsRecursion(int currentI, ArrayList<Card> currentCombination, int totalSum, int targetSum) {
 
         if(totalSum == targetSum) {
             if(currentCombination.size() > 1) {
@@ -555,7 +628,7 @@ public class Game {
 
     // generates all combinations of unique addition combinations: 
     // addition combinations: [5-c, 3-c], [5-c, 3-d], [5-d, 3-d], [5-d, 3-c] => [5-c, 3-c, 5-d, 3-d] + played card
-    public void findMultipleAdditionCombinations() {
+    private void findMultipleAdditionCombinations() {
         int n = this.mapCombinations.get("additions").size();
         int subsetCount = 1 << n; // 2^n subsets
 
@@ -590,7 +663,7 @@ public class Game {
     }
 
     // merges equals + additions and equals + multiadditions
-    public void findEqualsCombinedCombinations() {
+    private void findEqualsCombinedCombinations() {
         Set<Set<Card>> equalsCopy = new LinkedHashSet<>(this.mapCombinations.get("equals"));
         Set<Set<Card>> additionsCopy = new LinkedHashSet<>(this.mapCombinations.get("additions"));
         Set<Set<Card>> multiAdditionsCopy = new LinkedHashSet<>(this.mapCombinations.get("multiAdditions"));
@@ -622,7 +695,7 @@ public class Game {
     // checks and prevents if there is overlap with 1 and 11 rule where ACE can have two values 1 or 11, example:
     // equals = [A-d] additions = [7-d, A-d, 3-c], now in findEqualsCombinedCombinations() there will be overlap
     // findEqualsCombinedCombinations() merges [A-d] with [7-d, A-d, 3-c] => Set prevents [A-d, 7-d, A-d, 3-c] so the combination ends up [7-d, A-d, 3-c] which is SAME as valid addition combination
-    public boolean isAceOverlapping(Set<Card> equals, Set<Card> additionsMultiAdditions) {
+    private boolean isAceOverlapping(Set<Card> equals, Set<Card> additionsMultiAdditions) {
         boolean overlap = false;
         for(Card c: equals) {
             if(additionsMultiAdditions.contains(c)) {
@@ -634,8 +707,8 @@ public class Game {
         return overlap;
     }
 
-    public void clearCombinations() {
-        this.allCombinations.clear();
+    private void clearCombinations() {
+        this.allCombinations = new ArrayList<>();
         this.initializeCombinations();
     }
 }

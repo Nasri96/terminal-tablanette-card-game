@@ -7,5 +7,6 @@ public enum GameState {
     ROUND_START,
     NEXT_TURN,
     DEAL_CARDS,
-    GAME_OVER
+    GAME_OVER,
+    GAME_END
 }

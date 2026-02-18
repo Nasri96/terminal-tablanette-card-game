@@ -78,6 +78,29 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionDealCards(game);
             }
 
+            if(this.game.gameState == GameState.GAME_OVER) {
+                // checks if game was over after the ROUND_END state
+                if(this.game.getRoundChanged()) {
+                    printLastWinnerInRound();
+                }
+                wait(500);
+                System.out.println("--- GAME OVER ---");
+                wait(500);
+                
+                cpu.actionGameOver(game);
+            }
+
+            if(this.game.gameState == GameState.GAME_END) {
+                wait(500);
+                System.out.println("--- GAME DETAILS ---");
+                wait(500);
+                printGameEnd();
+                wait(2000);
+                System.out.println("Ending the game...");
+                
+                cpu.actionGameEnd(game);
+            }
+
     }
     
 }
