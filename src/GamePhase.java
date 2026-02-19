@@ -1,4 +1,4 @@
-public enum GameState {
+public enum GamePhase {
     GAME_SETUP,
     TURN_PLAY_CARD,
     TURN_PICK_COMBINATION,

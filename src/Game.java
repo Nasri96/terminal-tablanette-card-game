@@ -17,7 +17,7 @@ public class Game {
     private HashMap<String, Set<Set<Card>>> mapCombinations;
     private Player[] players;
     private ArrayList<Card> currentTable;
-    public GameState gameState;
+    public GamePhase gamePhase;
     public TerminalUI ui;
     
     public Game(CardDeck deck, Player[] players) {
@@ -35,7 +35,7 @@ public class Game {
         this.mapCombinations = new HashMap<>();
         this.players = players;
         this.currentTable = new ArrayList<>();
-        this.gameState = GameState.GAME_SETUP;
+        this.gamePhase = GamePhase.GAME_SETUP;
         this.ui = null;
     }
 
@@ -89,11 +89,11 @@ public class Game {
 
     public void updateGame(GameInput input) {
 
-        switch(gameState) {
+        switch(gamePhase) {
             case GAME_SETUP:
                 if(input.action == GameAction.START) {
                     handleStart();
-                    this.gameState = GameState.TURN_PLAY_CARD;
+                    this.gamePhase = GamePhase.TURN_PLAY_CARD;
                 }
 
                 break;
@@ -101,7 +101,7 @@ public class Game {
             case TURN_PLAY_CARD:
                 if(input.action == GameAction.PLAY_CARD) {
                     handlePlayCard(input.payload);
-                    this.gameState = GameState.TURN_PICK_COMBINATION;
+                    this.gamePhase = GamePhase.TURN_PICK_COMBINATION;
                 }
 
                 break;
@@ -109,15 +109,15 @@ public class Game {
             case TURN_PICK_COMBINATION:
                 if(input.action == GameAction.PICK_COMBINATION) {
                     handlePickCombination(input.payload);
-                    this.gameState = GameState.TURN_RESOLVE;
+                    this.gamePhase = GamePhase.TURN_RESOLVE;
                 }
 
                 break;
                 
             case TURN_RESOLVE:
                 if(input.action == GameAction.CONTINUE) {
-                    GameState turnResult = handleResolveTurn();
-                    this.gameState = turnResult;
+                    GamePhase turnResult = handleResolveTurn();
+                    this.gamePhase = turnResult;
                 }
 
                 break;
@@ -127,11 +127,11 @@ public class Game {
                     handleRoundEnd();
                     // game over possible also possible after round end
                     if(this.isGameOver()) {
-                        this.gameState = GameState.GAME_OVER;
+                        this.gamePhase = GamePhase.GAME_OVER;
                         break;
                     }
 
-                    this.gameState = GameState.ROUND_START;
+                    this.gamePhase = GamePhase.ROUND_START;
                 }
 
                 break;
@@ -139,7 +139,7 @@ public class Game {
             case ROUND_START:
                 if(input.action == GameAction.CONTINUE) {
                     handleRoundStart();
-                    this.gameState = GameState.NEXT_TURN;
+                    this.gamePhase = GamePhase.DEAL_CARDS;
                 }
 
                 break;
@@ -150,9 +150,9 @@ public class Game {
 
                     boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
                     if(playersCurrentHandsEmpty) {
-                        this.gameState = GameState.DEAL_CARDS;
+                        this.gamePhase = GamePhase.DEAL_CARDS;
                     } else {
-                        this.gameState = GameState.TURN_PLAY_CARD;
+                        this.gamePhase = GamePhase.TURN_PLAY_CARD;
                     }
                 }
 
@@ -161,16 +161,15 @@ public class Game {
             case DEAL_CARDS:
                 if(input.action == GameAction.CONTINUE) {
                     handleDealCards();
-                    this.gameState = GameState.TURN_PLAY_CARD;
+                    this.gamePhase = GamePhase.TURN_PLAY_CARD;
                 }
 
                 break;
             
-            // to do later
             case GAME_OVER:
                 if(input.action == GameAction.CONTINUE) {
                     handleGameOver();
-                    this.gameState = GameState.GAME_END;
+                    this.gamePhase = GamePhase.GAME_END;
                 }
                 
                 break;
@@ -178,7 +177,7 @@ public class Game {
             case GAME_END:
                 if(input.action == GameAction.CONTINUE) {
                     handleGameEnd();
-                    this.gameState = GameState.GAME_SETUP;
+                    this.gamePhase = GamePhase.GAME_SETUP;
                 }
 
                 break;
@@ -241,20 +240,20 @@ public class Game {
         }
     }
 
-    private GameState handleResolveTurn() {
+    private GamePhase handleResolveTurn() {
         // check for game over first
         if(isGameOver()) {
-            return GameState.GAME_OVER;
+            return GamePhase.GAME_OVER;
         }
 
         boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
         boolean deckIsEmpty = checkPlayingDeckIsEmpty();
 
         if(playersCurrentHandsEmpty && deckIsEmpty) {
-            return GameState.ROUND_END;
+            return GamePhase.ROUND_END;
         }
         
-        return GameState.NEXT_TURN;
+        return GamePhase.NEXT_TURN;
     }
 
     private boolean isGameOver() {
@@ -275,8 +274,10 @@ public class Game {
     private void handleNewNextTurn() {
         // on every new turn, swap who is playing
         if(this.playerMoveIndex == 0) {
+            System.out.println("switching players: player 0 > player 1");
             this.playerMoveIndex = 1;
         } else {
+            System.out.println("switching players: player 1 > player 0");
             this.playerMoveIndex = 0;
         }
 
@@ -391,7 +392,11 @@ public class Game {
         }
 
         // force ACE into table
-        // this.currentTable.add(this.deck.dealCard("A"));
+        // this.currentTable.add(this.deck.dealCard("10"));
+        // this.currentTable.add(this.deck.dealCard("Q"));
+        // this.currentTable.add(this.deck.dealCard("Q"));
+        // this.currentTable.add(this.deck.dealCard("3"));
+        // this.currentTable.add(this.deck.dealCard("3"));
     }
 
     private void playCardToTable(Card card) {
@@ -526,29 +531,31 @@ public class Game {
         // reset all combinations
         clearCombinations();
 
+        // equal combinations can use card symbol or value to check if table card is duplicate of played card
         // check for table card == played card
         for(int i = 0; i < this.currentTable.size(); i++) {
             if(this.currentTable.get(i).getValue() == playedCard.getValue()) {
-                LinkedHashSet<Card> oneDuplicates = new LinkedHashSet<>();
-                oneDuplicates.add(this.currentTable.get(i));
-                this.addToCombinations(new LinkedHashSet<>(oneDuplicates), "equals");
+                LinkedHashSet<Card> oneCardDuplicate = new LinkedHashSet<>();
+                oneCardDuplicate.add(this.currentTable.get(i));
+                this.addToCombinations(oneCardDuplicate, "equals");
             }
         }
 
         // check two table cards == played card (player playes K => he should be able to take up to three K-s, two from table and played card)
         for(int i = 0; i < this.currentTable.size(); i++) {
-            // find same card values on table
             for(int j = 0; j < this.currentTable.size(); j++) {
                 // skip same comparisons as values would be the same
                 if(i == j) {
                     continue;
                 }
+                // find two same card values on table
                 if(this.currentTable.get(i).getValue() == this.currentTable.get(j).getValue()) {
+                    // check if two same values are equal to player card value
                     if(this.currentTable.get(i).getValue() == playedCard.getValue()) {
-                        LinkedHashSet<Card> twoCard = new LinkedHashSet<>();
-                        twoCard.add(this.currentTable.get(i));
-                        twoCard.add(this.currentTable.get(j));
-                        this.addToCombinations(twoCard, "equals");
+                        LinkedHashSet<Card> twoCardDuplicates = new LinkedHashSet<>();
+                        twoCardDuplicates.add(this.currentTable.get(i));
+                        twoCardDuplicates.add(this.currentTable.get(j));
+                        this.addToCombinations(twoCardDuplicates, "equals");
                     }
                 }
             }

@@ -21,7 +21,7 @@ public class TerminalUI {
                 continue;
             }
 
-            if(this.game.gameState == GameState.GAME_SETUP) {
+            if(this.game.gamePhase == GamePhase.GAME_SETUP) {
                 printMainMenu();
 
                 String commandInput = this.scanner.nextLine();
@@ -36,7 +36,7 @@ public class TerminalUI {
                 }
             }
 
-            if(this.game.gameState == GameState.TURN_PLAY_CARD) {
+            if(this.game.gamePhase == GamePhase.TURN_PLAY_CARD) {
                 Player player = this.game.getCurrentPlayerMove();
                 printTable(); 
                 System.out.println("------------------------");
@@ -50,7 +50,7 @@ public class TerminalUI {
                 }
             }
 
-            if(this.game.gameState == GameState.TURN_PICK_COMBINATION) {
+            if(this.game.gamePhase == GamePhase.TURN_PICK_COMBINATION) {
                 Player player = this.game.getCurrentPlayerMove();
                 ArrayList<Card> table = this.game.getCurrentTable();
                 printTable();
@@ -83,16 +83,17 @@ public class TerminalUI {
                 }
             }
 
-            if(this.game.gameState == GameState.TURN_RESOLVE) {
+            if(this.game.gamePhase == GamePhase.TURN_RESOLVE) {
                 wait(500);
                 Player player = this.game.getCurrentPlayerMove();
                 printWonCards();
+                wait(500);
                 printPointsAwarded();
                 wait(1000);
                 player.actionResolveTurn(game);
             }
 
-            if(this.game.gameState == GameState.ROUND_END) {
+            if(this.game.gamePhase == GamePhase.ROUND_END) {
                 wait(500);
                 System.out.println("======== END OF THE ROUND ========");
                 wait(1000);
@@ -100,16 +101,17 @@ public class TerminalUI {
                 player.actionRoundEnd(game);
             }
 
-            if(this.game.gameState == GameState.ROUND_START) {
+            if(this.game.gamePhase == GamePhase.ROUND_START) {
                 printLastWinnerInRound();
                 wait(500);
                 System.out.println("======== START OF THE ROUND ========");
                 wait(1000);
+                // System.out.println("--- SWITCHING PLAYERS ---");
                 Player player = this.game.getCurrentPlayerMove();
                 player.actionRoundStart(game);
             }
 
-            if(this.game.gameState == GameState.NEXT_TURN) {
+            if(this.game.gamePhase == GamePhase.NEXT_TURN) {
                 wait(500);
                 System.out.println("--- SWITCHING PLAYERS ---");
                 wait(1000);
@@ -117,7 +119,7 @@ public class TerminalUI {
                 player.actionNextTurn(game);
             }
 
-            if(this.game.gameState == GameState.DEAL_CARDS) {
+            if(this.game.gamePhase == GamePhase.DEAL_CARDS) {
                 wait(500);
                 System.out.println("--- DEALING CARDS TO PLAYERS ---");
                 wait(1000);
@@ -125,7 +127,7 @@ public class TerminalUI {
                 player.actionDealCards(game);
             }
 
-            if(this.game.gameState == GameState.GAME_OVER) {
+            if(this.game.gamePhase == GamePhase.GAME_OVER) {
                 // checks if game was over after the ROUND_END state
                 if(this.game.getRoundChanged()) {
                     printLastWinnerInRound();
@@ -137,7 +139,7 @@ public class TerminalUI {
                 player.actionGameOver(game);
             }
 
-            if(this.game.gameState == GameState.GAME_END) {
+            if(this.game.gamePhase == GamePhase.GAME_END) {
                 wait(500);
                 System.out.println("--- GAME DETAILS ---");
                 wait(500);

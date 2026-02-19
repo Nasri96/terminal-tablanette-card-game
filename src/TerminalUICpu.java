@@ -10,24 +10,28 @@ public class TerminalUICpu extends TerminalUI {
     public void processCpuInputs() {
             Player cpu = this.game.getCurrentPlayerMove();
 
-            if(this.game.gameState == GameState.GAME_SETUP) {
+            if(this.game.gamePhase == GamePhase.GAME_SETUP) {
                 cpu.actionStart(this.game);
             }
 
-            if(this.game.gameState == GameState.TURN_PLAY_CARD) {
+            if(this.game.gamePhase == GamePhase.TURN_PLAY_CARD) {
+                wait(500);
                 System.out.println("");
                 this.printTable();
-                this.wait(500);
-                System.out.println("------------------------");
+                wait(500);
+                System.out.println("------------------------ TURN_PLAY_CARD");
+                wait(500);
                 System.out.println(cpu.getName() + " is playing card...");
-                this.game.ui.wait(1500);
+                wait(2000);
 
                 cpu.actionPlayCard(this.game, null);
             }
 
-            if(this.game.gameState == GameState.TURN_PICK_COMBINATION) {
+            if(this.game.gamePhase == GamePhase.TURN_PICK_COMBINATION) {
                 this.printTable();
-                System.out.println("------------------------");
+                wait(500);
+                System.out.println("------------------------ TURN_PICK_COMBINATION");
+                wait(500);
                 ArrayList<Card> table = game.getCurrentTable();
                 System.out.println(cpu.getName() + " played card: " + table.get(table.size() - 1));
                 System.out.println(cpu.getName() + " is picking card combination...");
@@ -36,63 +40,66 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionPickCombination(this.game, null);
             }
 
-            if(this.game.gameState == GameState.TURN_RESOLVE) {
+            if(this.game.gamePhase == GamePhase.TURN_RESOLVE) {
                 this.wait(500);
+                System.out.println("------------------------ TURN_RESOLVE");
                 this.printWonCards();
+                wait(500);
                 this.printPointsAwarded();
                 this.wait(1000);
                 
                 cpu.actionResolveTurn(game);
             }
 
-            if(this.game.gameState == GameState.ROUND_END) {
+            if(this.game.gamePhase == GamePhase.ROUND_END) {
                 this.wait(500);
-                System.out.println("======== END OF THE ROUND ========");
+                System.out.println("======== ROUND_END ========");
                 this.wait(1000);
 
                 cpu.actionRoundEnd(game);
             }
 
-            if(this.game.gameState == GameState.ROUND_START) {
+            if(this.game.gamePhase == GamePhase.ROUND_START) {
                 this.printLastWinnerInRound();
                 this.wait(500);
-                System.out.println("======== START OF THE ROUND ========");
+                System.out.println("======== ROUND_START ========");
                 this.wait(1000);
+                // System.out.println("--- SWITCHING PLAYERS ---");
 
                 cpu.actionRoundStart(game);
             }
 
-            if(this.game.gameState == GameState.NEXT_TURN) {
+            if(this.game.gamePhase == GamePhase.NEXT_TURN) {
                 this.wait(500);
-                System.out.println("--- SWITCHING PLAYERS ---");
+                System.out.println("--- NEXT_TURN ---");
                 this.wait(1000);
 
                 cpu.actionNextTurn(game);
             }
 
-            if(this.game.gameState == GameState.DEAL_CARDS) {
+            if(this.game.gamePhase == GamePhase.DEAL_CARDS) {
                 game.ui.wait(500);
-                System.out.println("--- DEALING CARDS TO PLAYERS ---");
+                System.out.println("--- DEAL_CARDS ---");
                 game.ui.wait(1000);
 
                 cpu.actionDealCards(game);
             }
 
-            if(this.game.gameState == GameState.GAME_OVER) {
+            if(this.game.gamePhase == GamePhase.GAME_OVER) {
                 // checks if game was over after the ROUND_END state
                 if(this.game.getRoundChanged()) {
                     printLastWinnerInRound();
                 }
                 wait(500);
-                System.out.println("--- GAME OVER ---");
+                System.out.println("--- GAME_OVER ---");
                 wait(500);
                 
                 cpu.actionGameOver(game);
             }
 
-            if(this.game.gameState == GameState.GAME_END) {
+            if(this.game.gamePhase == GamePhase.GAME_END) {
                 wait(500);
-                System.out.println("--- GAME DETAILS ---");
+                System.out.println("--- GAME_END ---");
                 wait(500);
                 printGameEnd();
                 wait(2000);
