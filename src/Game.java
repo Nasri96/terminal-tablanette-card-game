@@ -26,7 +26,7 @@ public class Game {
         this.playerMoveIndex = 0;
         this.roundsPlayed = 0;
         this.roundChanged = false;
-        this.winningScore = 8;
+        this.winningScore = 10;
         this.lastWinnerInRound = null;
         this.lastWinnerOfMoreCards = null;
         this.lastWinnerOfTablePoint = null;
@@ -146,7 +146,7 @@ public class Game {
 
             case NEXT_TURN:
                 if(input.action == GameAction.CONTINUE) {
-                    handleNewNextTurn();
+                    handleNextTurn();
 
                     boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
                     if(playersCurrentHandsEmpty) {
@@ -271,7 +271,7 @@ public class Game {
         this.dealCardsToPlayers();
     }
 
-    private void handleNewNextTurn() {
+    private void handleNextTurn() {
         // on every new turn, swap who is playing
         if(this.playerMoveIndex == 0) {
             System.out.println("switching players: player 0 > player 1");
@@ -282,15 +282,15 @@ public class Game {
         }
 
         // on every new round, swap who should play first (override previous only if round is changed)
-        if(this.roundChanged) {
-            if(roundsPlayed % 2 == 0) {
-                this.playerMoveIndex = 0;
-            } else {
-                this.playerMoveIndex = 1;
-            }
+        // if(this.roundChanged) {
+        //     if(roundsPlayed % 2 == 0) {
+        //         this.playerMoveIndex = 0;
+        //     } else {
+        //         this.playerMoveIndex = 1;
+        //     }
 
-            this.roundChanged = false;
-        }
+        //     this.roundChanged = false;
+        // }
 
 
         this.lastWinnerOfTablePoint = null;
@@ -342,6 +342,15 @@ public class Game {
         this.deck.shuffleDeck();
         // deal cards to table
         this.dealCardsToTable();
+        // on every new round, swap who should play first
+        if(roundsPlayed % 2 == 0) {
+            this.playerMoveIndex = 0;
+        } else {
+            this.playerMoveIndex = 1;
+        }
+
+        this.roundChanged = false;
+       
     }
 
     private void handleGameOver() {

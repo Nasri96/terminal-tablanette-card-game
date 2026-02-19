@@ -64,7 +64,7 @@ public class TerminalUICpu extends TerminalUI {
                 this.wait(500);
                 System.out.println("======== ROUND_START ========");
                 this.wait(1000);
-                // System.out.println("--- SWITCHING PLAYERS ---");
+                System.out.println("--- SWITCHING PLAYERS ---");
 
                 cpu.actionRoundStart(game);
             }

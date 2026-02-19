@@ -39,7 +39,7 @@ public class TerminalUI {
             if(this.game.gamePhase == GamePhase.TURN_PLAY_CARD) {
                 Player player = this.game.getCurrentPlayerMove();
                 printTable(); 
-                System.out.println("------------------------");
+                System.out.println("------------------------ TURN_PLAY_CARD");
                 System.out.println("Play your card: (input needs to be same as it is shown in 'Your cards:')");
                 String commandInput = this.scanner.nextLine();
                 String playedCardIndex = validatePlayedCardInput(commandInput);
@@ -54,7 +54,7 @@ public class TerminalUI {
                 Player player = this.game.getCurrentPlayerMove();
                 ArrayList<Card> table = this.game.getCurrentTable();
                 printTable();
-                System.out.println("------------------------");
+                System.out.println("------------------------ TURN_PICK_COMBINATION");
                 System.out.println("Played card: " + table.get(this.game.getCurrentTable().size() - 1));
                 printAllCombinations();
                 if(this.game.getAllCombinations().size() == 0) {
@@ -85,6 +85,7 @@ public class TerminalUI {
 
             if(this.game.gamePhase == GamePhase.TURN_RESOLVE) {
                 wait(500);
+                System.out.println("------------------------ TURN_RESOLVE");
                 Player player = this.game.getCurrentPlayerMove();
                 printWonCards();
                 wait(500);
@@ -95,7 +96,7 @@ public class TerminalUI {
 
             if(this.game.gamePhase == GamePhase.ROUND_END) {
                 wait(500);
-                System.out.println("======== END OF THE ROUND ========");
+                System.out.println("======== ROUND_END ========");
                 wait(1000);
                 Player player = this.game.getCurrentPlayerMove();
                 player.actionRoundEnd(game);
@@ -104,16 +105,16 @@ public class TerminalUI {
             if(this.game.gamePhase == GamePhase.ROUND_START) {
                 printLastWinnerInRound();
                 wait(500);
-                System.out.println("======== START OF THE ROUND ========");
+                System.out.println("======== ROUND_START ========");
                 wait(1000);
-                // System.out.println("--- SWITCHING PLAYERS ---");
+                System.out.println("--- SWITCHING PLAYERS ---");
                 Player player = this.game.getCurrentPlayerMove();
                 player.actionRoundStart(game);
             }
 
             if(this.game.gamePhase == GamePhase.NEXT_TURN) {
                 wait(500);
-                System.out.println("--- SWITCHING PLAYERS ---");
+                System.out.println("--- NEXT_TURN ---");
                 wait(1000);
                 Player player = this.game.getCurrentPlayerMove();
                 player.actionNextTurn(game);
@@ -121,7 +122,7 @@ public class TerminalUI {
 
             if(this.game.gamePhase == GamePhase.DEAL_CARDS) {
                 wait(500);
-                System.out.println("--- DEALING CARDS TO PLAYERS ---");
+                System.out.println("--- DEAL_CARDS ---");
                 wait(1000);
                 Player player = this.game.getCurrentPlayerMove();
                 player.actionDealCards(game);
@@ -133,7 +134,7 @@ public class TerminalUI {
                     printLastWinnerInRound();
                 }
                 wait(500);
-                System.out.println("--- GAME OVER ---");
+                System.out.println("--- GAME_OVER ---");
                 wait(500);
                 Player player = this.game.getCurrentPlayerMove();
                 player.actionGameOver(game);
@@ -141,10 +142,10 @@ public class TerminalUI {
 
             if(this.game.gamePhase == GamePhase.GAME_END) {
                 wait(500);
-                System.out.println("--- GAME DETAILS ---");
+                System.out.println("--- GAME_END ---");
                 wait(500);
                 printGameEnd();
-                System.out.println("Type 'continue' to end the game");
+                System.out.println("Type 'continue' to start new game");
                 System.out.print("> ");
                 validateTextInput("continue");
                 Player player = this.game.getCurrentPlayerMove();
@@ -222,6 +223,8 @@ public class TerminalUI {
         Player lastWinnerOfMoreCards = this.game.getLastWinnerOfMoreCards();
         if(lastWinnerOfMoreCards != null) {
             System.out.println(lastWinnerOfMoreCards.getName() + " awarded 3 points for winning more cards");
+        } else {
+            System.out.println("Both players won equal number of cards. No points points awarded");
         }
         wait(500);
         System.out.println(lastWinner.getName() + " has a total of " + lastWinner.getPointsWon() + " points");
