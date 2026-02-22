@@ -8,16 +8,18 @@ public class TerminalUICpu extends TerminalUI {
 
 
     public void processCpuInputs() {
-            Player cpu = this.game.getCurrentPlayerMove();
+            GameState gameState = this.game.getGameState();
+            GamePhase gamePhase = this.game.getGamePhase();
+            Player cpu = gameState.getCurrentPlayerMove();
 
-            if(this.game.gamePhase == GamePhase.GAME_SETUP) {
+            if(gamePhase == GamePhase.GAME_SETUP) {
                 cpu.actionStart(this.game);
             }
 
-            if(this.game.gamePhase == GamePhase.TURN_PLAY_CARD) {
+            if(gamePhase == GamePhase.TURN_PLAY_CARD) {
                 wait(500);
                 System.out.println("");
-                this.printTable();
+                this.printTable(gameState);
                 wait(500);
                 System.out.println("------------------------ TURN_PLAY_CARD");
                 wait(500);
@@ -27,12 +29,12 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionPlayCard(this.game, null);
             }
 
-            if(this.game.gamePhase == GamePhase.TURN_PICK_COMBINATION) {
-                this.printTable();
+            if(gamePhase == GamePhase.TURN_PICK_COMBINATION) {
+                this.printTable(gameState);
                 wait(500);
                 System.out.println("------------------------ TURN_PICK_COMBINATION");
                 wait(500);
-                ArrayList<Card> table = game.getCurrentTable();
+                ArrayList<Card> table = gameState.getCurrentTable();
                 System.out.println(cpu.getName() + " played card: " + table.get(table.size() - 1));
                 System.out.println(cpu.getName() + " is picking card combination...");
                 this.wait(2000);
@@ -40,18 +42,18 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionPickCombination(this.game, null);
             }
 
-            if(this.game.gamePhase == GamePhase.TURN_RESOLVE) {
+            if(gamePhase == GamePhase.TURN_RESOLVE) {
                 this.wait(500);
                 System.out.println("------------------------ TURN_RESOLVE");
-                this.printWonCards();
+                this.printWonCards(gameState);
                 wait(500);
-                this.printPointsAwarded();
+                this.printPointsAwarded(gameState);
                 this.wait(1000);
                 
                 cpu.actionResolveTurn(game);
             }
 
-            if(this.game.gamePhase == GamePhase.ROUND_END) {
+            if(gamePhase == GamePhase.ROUND_END) {
                 this.wait(500);
                 System.out.println("======== ROUND_END ========");
                 this.wait(1000);
@@ -59,8 +61,8 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionRoundEnd(game);
             }
 
-            if(this.game.gamePhase == GamePhase.ROUND_START) {
-                this.printLastWinnerInRound();
+            if(gamePhase == GamePhase.ROUND_START) {
+                this.printLastWinnerInRound(gameState);
                 this.wait(500);
                 System.out.println("======== ROUND_START ========");
                 this.wait(1000);
@@ -69,7 +71,7 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionRoundStart(game);
             }
 
-            if(this.game.gamePhase == GamePhase.NEXT_TURN) {
+            if(gamePhase == GamePhase.NEXT_TURN) {
                 this.wait(500);
                 System.out.println("--- NEXT_TURN ---");
                 this.wait(1000);
@@ -77,7 +79,7 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionNextTurn(game);
             }
 
-            if(this.game.gamePhase == GamePhase.DEAL_CARDS) {
+            if(gamePhase == GamePhase.DEAL_CARDS) {
                 game.ui.wait(500);
                 System.out.println("--- DEAL_CARDS ---");
                 game.ui.wait(1000);
@@ -85,10 +87,10 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionDealCards(game);
             }
 
-            if(this.game.gamePhase == GamePhase.GAME_OVER) {
+            if(gamePhase == GamePhase.GAME_OVER) {
                 // checks if game was over after the ROUND_END state
-                if(this.game.getRoundChanged()) {
-                    printLastWinnerInRound();
+                if(gameState.getRoundChanged()) {
+                    printLastWinnerInRound(gameState);
                 }
                 wait(500);
                 System.out.println("--- GAME_OVER ---");
@@ -97,11 +99,11 @@ public class TerminalUICpu extends TerminalUI {
                 cpu.actionGameOver(game);
             }
 
-            if(this.game.gamePhase == GamePhase.GAME_END) {
+            if(gamePhase == GamePhase.GAME_END) {
                 wait(500);
                 System.out.println("--- GAME_END ---");
                 wait(500);
-                printGameEnd();
+                printGameEnd(gameState);
                 wait(2000);
                 System.out.println("Ending the game...");
                 

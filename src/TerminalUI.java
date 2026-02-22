@@ -14,14 +14,17 @@ public class TerminalUI {
         TerminalUICpu uiCpu = new TerminalUICpu(game);
 
         while(true) {
+            GameState gameState = this.game.getGameState();
+            GamePhase gamePhase = this.game.getGamePhase();
             // if current player is cpu, process cpu inputs
-            Player currentPlayer = this.game.getCurrentPlayerMove();
-            if(currentPlayer instanceof PlayerCpu) {
+            Player player = gameState.getCurrentPlayerMove();
+            if(player instanceof PlayerCpu) {
                 uiCpu.processCpuInputs();
                 continue;
             }
 
-            if(this.game.gamePhase == GamePhase.GAME_SETUP) {
+            if(gamePhase == GamePhase.GAME_SETUP) {
+                System.out.println("------------------------ GAME_SETUP");
                 printMainMenu();
 
                 String commandInput = this.scanner.nextLine();
@@ -31,18 +34,16 @@ public class TerminalUI {
                 }
 
                 if(commandInput.equals("start")) {
-                    Player player = this.game.getCurrentPlayerMove();
                     player.actionStart(this.game);
                 }
             }
 
-            if(this.game.gamePhase == GamePhase.TURN_PLAY_CARD) {
-                Player player = this.game.getCurrentPlayerMove();
-                printTable(); 
+            if(gamePhase == GamePhase.TURN_PLAY_CARD) {
+                printTable(gameState); 
                 System.out.println("------------------------ TURN_PLAY_CARD");
                 System.out.println("Play your card: (input needs to be same as it is shown in 'Your cards:')");
                 String commandInput = this.scanner.nextLine();
-                String playedCardIndex = validatePlayedCardInput(commandInput);
+                String playedCardIndex = validatePlayedCardInput(commandInput, gameState);
                 if(!playedCardIndex.equals("invalid")) {
                     player.actionPlayCard(this.game, playedCardIndex);
                 } else {
@@ -50,14 +51,13 @@ public class TerminalUI {
                 }
             }
 
-            if(this.game.gamePhase == GamePhase.TURN_PICK_COMBINATION) {
-                Player player = this.game.getCurrentPlayerMove();
-                ArrayList<Card> table = this.game.getCurrentTable();
-                printTable();
+            if(gamePhase == GamePhase.TURN_PICK_COMBINATION) {
+                ArrayList<Card> table = gameState.getCurrentTable();
+                printTable(gameState);
                 System.out.println("------------------------ TURN_PICK_COMBINATION");
-                System.out.println("Played card: " + table.get(this.game.getCurrentTable().size() - 1));
-                printAllCombinations();
-                if(this.game.getAllCombinations().size() == 0) {
+                System.out.println("Played card: " + table.get(gameState.getCurrentTable().size() - 1));
+                printAllCombinations(gameState);
+                if(gameState.getAllCombinations().size() == 0) {
                     System.out.println("You can't win any cards, press enter to continue:");
                     String commandInput = this.scanner.nextLine();
                     player.actionPickCombination(this.game, null);
@@ -69,7 +69,7 @@ public class TerminalUI {
                         try {
                             int commandInput = Integer.valueOf(scanner.nextLine());
 
-                            if(commandInput >= 1 && commandInput <= this.game.getAllCombinations().size()) {
+                            if(commandInput >= 1 && commandInput <= gameState.getAllCombinations().size()) {
                                 // select index and pick combination
                                 player.actionPickCombination(this.game, commandInput - 1);
                                 break;
@@ -83,72 +83,65 @@ public class TerminalUI {
                 }
             }
 
-            if(this.game.gamePhase == GamePhase.TURN_RESOLVE) {
+            if(gamePhase == GamePhase.TURN_RESOLVE) {
                 wait(500);
                 System.out.println("------------------------ TURN_RESOLVE");
-                Player player = this.game.getCurrentPlayerMove();
-                printWonCards();
+                printWonCards(gameState);
                 wait(500);
-                printPointsAwarded();
+                printPointsAwarded(gameState);
                 wait(1000);
                 player.actionResolveTurn(game);
             }
 
-            if(this.game.gamePhase == GamePhase.ROUND_END) {
+            if(gamePhase == GamePhase.ROUND_END) {
                 wait(500);
                 System.out.println("======== ROUND_END ========");
                 wait(1000);
-                Player player = this.game.getCurrentPlayerMove();
                 player.actionRoundEnd(game);
             }
 
-            if(this.game.gamePhase == GamePhase.ROUND_START) {
-                printLastWinnerInRound();
+            if(gamePhase == GamePhase.ROUND_START) {
+                printLastWinnerInRound(gameState);
                 wait(500);
                 System.out.println("======== ROUND_START ========");
                 wait(1000);
                 System.out.println("--- SWITCHING PLAYERS ---");
-                Player player = this.game.getCurrentPlayerMove();
                 player.actionRoundStart(game);
             }
 
-            if(this.game.gamePhase == GamePhase.NEXT_TURN) {
+            if(gamePhase == GamePhase.NEXT_TURN) {
                 wait(500);
                 System.out.println("--- NEXT_TURN ---");
                 wait(1000);
-                Player player = this.game.getCurrentPlayerMove();
                 player.actionNextTurn(game);
             }
 
-            if(this.game.gamePhase == GamePhase.DEAL_CARDS) {
+            if(gamePhase == GamePhase.DEAL_CARDS) {
                 wait(500);
                 System.out.println("--- DEAL_CARDS ---");
                 wait(1000);
-                Player player = this.game.getCurrentPlayerMove();
                 player.actionDealCards(game);
             }
 
-            if(this.game.gamePhase == GamePhase.GAME_OVER) {
+            if(gamePhase == GamePhase.GAME_OVER) {
                 // checks if game was over after the ROUND_END state
-                if(this.game.getRoundChanged()) {
-                    printLastWinnerInRound();
+                if(gameState.getRoundChanged()) {
+                    printLastWinnerInRound(gameState);
                 }
                 wait(500);
                 System.out.println("--- GAME_OVER ---");
                 wait(500);
-                Player player = this.game.getCurrentPlayerMove();
                 player.actionGameOver(game);
             }
 
-            if(this.game.gamePhase == GamePhase.GAME_END) {
+            if(gamePhase == GamePhase.GAME_END) {
                 wait(500);
                 System.out.println("--- GAME_END ---");
                 wait(500);
-                printGameEnd();
+                printGameEnd(gameState);
                 System.out.println("Type 'continue' to start new game");
                 System.out.print("> ");
                 validateTextInput("continue");
-                Player player = this.game.getCurrentPlayerMove();
                 player.actionGameEnd(game);
             }
 
@@ -156,13 +149,13 @@ public class TerminalUI {
         }
     }
 
-    public void printPlayerHand() {
-        Player player = this.game.getCurrentPlayerMove();
+    public void printPlayerHand(GameState gameState) {
+        Player player = gameState.getCurrentPlayerMove();
         System.out.print(player.getCurrentHand());
     }
 
-    public void printWonCards() {
-        Player player = this.game.getCurrentPlayerMove();
+    public void printWonCards(GameState gameState) {
+        Player player = gameState.getCurrentPlayerMove();
         if(player.getLastCardsWon().size() > 0) {
             System.out.println(player.getName() + " won cards: " + player.getLastCardsWon());
         } else {
@@ -170,16 +163,16 @@ public class TerminalUI {
         }
     }
 
-    public void printAllCombinations() {
-        if(this.game.getAllCombinations().size() > 0) {
+    public void printAllCombinations(GameState gameState) {
+        if(gameState.getAllCombinations().size() > 0) {
             System.out.println("Pick card combination: ");
-            for(int i = 0; i < this.game.getAllCombinations().size() + 1; i++) {
+            for(int i = 0; i < gameState.getAllCombinations().size() + 1; i++) {
                 // after last combination play card only
-                if(i == this.game.getAllCombinations().size()) {
+                if(i == gameState.getAllCombinations().size()) {
                     System.out.println(-1 +  ": Play card only");
                     break;
                 }
-                ArrayList<Card> currCombination = this.game.getAllCombinations().get(i);
+                ArrayList<Card> currCombination = gameState.getAllCombinations().get(i);
                 System.out.print(i + 1 + ": [ ");
                 for(int j = 0; j < currCombination.size(); j++) {
                     if(currCombination.size() == 2) {
@@ -206,8 +199,8 @@ public class TerminalUI {
         
     }
 
-    public void printLastWinnerInRound() {
-        Player lastWinner = this.game.getLastWinnerInRound();
+    public void printLastWinnerInRound(GameState gameState) {
+        Player lastWinner = gameState.getLastWinnerInRound();
         
         int newPoints = 0;
         if(lastWinner != null) {
@@ -220,7 +213,7 @@ public class TerminalUI {
             System.out.println(lastWinner.getName() + " received " + newPoints + " points");
         }
         wait(1000);
-        Player lastWinnerOfMoreCards = this.game.getLastWinnerOfMoreCards();
+        Player lastWinnerOfMoreCards = gameState.getLastWinnerOfMoreCards();
         if(lastWinnerOfMoreCards != null) {
             System.out.println(lastWinnerOfMoreCards.getName() + " awarded 3 points for winning more cards");
         } else {
@@ -230,9 +223,9 @@ public class TerminalUI {
         System.out.println(lastWinner.getName() + " has a total of " + lastWinner.getPointsWon() + " points");
     }
 
-    public void printPointsAwarded() {
-        Player lastTurnWinner = this.game.getCurrentPlayerMove();
-        Player lastWinnerOfTablePoint = this.game.getLastWinnerOfTablePoint();
+    public void printPointsAwarded(GameState gameState) {
+        Player lastTurnWinner = gameState.getCurrentPlayerMove();
+        Player lastWinnerOfTablePoint = gameState.getLastWinnerOfTablePoint();
 
         int newPoints = 0;
         if(lastTurnWinner.getLastCardsWon().size() > 0) {
@@ -253,9 +246,9 @@ public class TerminalUI {
         }
     }
 
-    public void printGameEnd() {
-        Player winner = this.game.getGameOverPlayers().get("winner");
-        Player loser = this.game.getGameOverPlayers().get("loser");
+    public void printGameEnd(GameState gameState) {
+        Player winner = gameState.getGameOverPlayers().get("winner");
+        Player loser = gameState.getGameOverPlayers().get("loser");
         System.out.println("Winner: " + winner.getName() + ", points won: " + winner.getPointsWon() + ", cards won: " + winner.getCardsWon());
         System.out.println("Loser: " + loser.getName() + ", points won: " + loser.getPointsWon() + ", cards won: " + loser.getCardsWon());
     }
@@ -294,10 +287,10 @@ public class TerminalUI {
         }
     }
 
-    public String validatePlayedCardInput(String input) {
+    public String validatePlayedCardInput(String input, GameState gameState) {
         System.out.println("your input was > " + input);
         // check if input was correct and apply rules
-        Player player = this.game.getCurrentPlayerMove();
+        Player player = gameState.getCurrentPlayerMove();
         ArrayList<Card> playerHand = player.getCurrentHand();
         String[] cardInput = input.split("-"); // "split input like 5-d to 5 and d"
         
@@ -324,10 +317,10 @@ public class TerminalUI {
         }
     }
 
-    public void printTable() {
+    public void printTable(GameState gameState) {
         int rows = 9;
         int cols = 40;
-        ArrayList<ArrayList<Card>> cardRows = calcCardRows();
+        ArrayList<ArrayList<Card>> cardRows = calcCardRows(gameState);
         // calc offset for current row
         int offSetStart = 0;
         int offSetRow = cardRows.size() / 2;
@@ -335,7 +328,7 @@ public class TerminalUI {
 
         String tableTitle = "TABLE";
         String gameStateTitle = "";
-        Player player = this.game.getCurrentPlayerMove();
+        Player player = gameState.getCurrentPlayerMove();
         System.out.println();
         if(!(player instanceof PlayerCpu)) {
             gameStateTitle = "Your cards:";
@@ -372,10 +365,10 @@ public class TerminalUI {
 
                 // after table print rest of game state
                 if(i == 1 && j == cols -1) {
-                    int lengthOfAllCards = getToStringLengthOfCards(this.game.getCurrentPlayerMove().getCurrentHand());
+                    int lengthOfAllCards = getToStringLengthOfCards(gameState);
                     printEmptySpaces(cols / 2 - lengthOfAllCards / 2);
                     if(!(player instanceof PlayerCpu)) {
-                        printPlayerHand();
+                        printPlayerHand(gameState);
                     }
                 }
                 
@@ -386,9 +379,10 @@ public class TerminalUI {
         }
     }
 
-    public int getToStringLengthOfCards(ArrayList<Card> cards) {
+    public int getToStringLengthOfCards(GameState gameState) {
+        ArrayList<Card> cards = gameState.getCurrentPlayerMove().getCurrentHand();
         int lengthOfAllCards = 0;
-        for(Card card: this.game.getCurrentPlayerMove().getCurrentHand()) {
+        for(Card card: cards) {
             lengthOfAllCards+= card.getToStringLength();
         }
 
@@ -396,18 +390,18 @@ public class TerminalUI {
     }
 
     // every four cards create new array list for card rows
-    public ArrayList<ArrayList<Card>> calcCardRows() {
-        ArrayList<Card> currentTableCopy = new ArrayList<>(this.game.getCurrentTable());
+    public ArrayList<ArrayList<Card>> calcCardRows(GameState gameState) {
+        ArrayList<Card> table = gameState.getCurrentTable();
         ArrayList<ArrayList<Card>> cardRows = new ArrayList<>();
 
-        if(currentTableCopy.size() > 0) {
+        if(table.size() > 0) {
             int cardCurrRow = 0;
             ArrayList<Card> cards = new ArrayList<>();
             cardRows.add(cards);
-            for(int i = 1; i <= currentTableCopy.size(); i++) {
-                cardRows.get(cardCurrRow).add(currentTableCopy.get(i - 1));
+            for(int i = 1; i <= table.size(); i++) {
+                cardRows.get(cardCurrRow).add(table.get(i - 1));
 
-                if(i % 4 == 0 && i < currentTableCopy.size()) {
+                if(i % 4 == 0 && i < table.size()) {
                     cardCurrRow++;
                     cards = new ArrayList<>();
                     cardRows.add(cards);
@@ -419,7 +413,7 @@ public class TerminalUI {
     }
 
     public int printCurrentTable(ArrayList<Card> cardsToPrint) {
-        ArrayList<Card> table = this.game.getCurrentTable();
+        ArrayList<Card> table = this.game.getGameState().getCurrentTable();
 
         // one card is 3 spaces long
         int skippedCols = 0;

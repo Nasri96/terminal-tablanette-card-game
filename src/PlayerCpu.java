@@ -23,7 +23,8 @@ public class PlayerCpu extends Player {
     }
 
     public void actionPickCombination(Game game, Object payload) {
-        ArrayList<ArrayList<Card>> combinations = new ArrayList<>(game.getAllCombinations());
+        GameState gameState = game.getGameState();
+        ArrayList<ArrayList<Card>> combinations = new ArrayList<>(gameState.getAllCombinations());
 
         // no combinations to pick
         if(combinations.size() == 0) {
@@ -51,7 +52,7 @@ public class PlayerCpu extends Player {
             });
 
             ArrayList<Card> highestPointCombination = combinations.get(0);
-            int indexOfHighestPoint = game.getAllCombinations().indexOf(highestPointCombination);
+            int indexOfHighestPoint = gameState.getAllCombinations().indexOf(highestPointCombination);
 
             super.actionPickCombination(game, indexOfHighestPoint);
         }
