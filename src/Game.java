@@ -299,7 +299,6 @@ public class Game {
         gameState.setLastWinnerOfMoreCards(null);
         gameState.setLastWinnerOfTablePoint(null);
         gameState.getGameOverPlayers().clear();
-        this.combinationsService.clearCombinations();
         gameState.setAllCombinations(null);
 
         // reset players

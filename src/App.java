@@ -8,7 +8,7 @@ public class App {
         Player humanPlayer2 = new Player("player2");
         PlayerCpu cpu = new PlayerCpu("cpu1");
         PlayerCpu cpu2 = new PlayerCpu("cpu2");
-        Player[] players = { humanPlayer, cpu2 };
+        Player[] players = { cpu, cpu2 };
 
 
         Game game = new Game(players);

@@ -16,7 +16,7 @@ public class TerminalUI {
         while(true) {
             GameState gameState = this.game.getGameState();
             GamePhase gamePhase = this.game.getGamePhase();
-            System.out.println(gameState);
+            // System.out.println(gameState);
             // if current player is cpu, process cpu inputs
             Player player = gameState.getCurrentPlayerMove();
             if(player instanceof PlayerCpu) {

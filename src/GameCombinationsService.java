@@ -1,55 +1,32 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class GameCombinationsService {
-    private ArrayList<ArrayList<Card>> allCombinations;
-    private HashMap<String, Set<Set<Card>>> mapCombinations;
+    
+    public List<ArrayList<Card>> getCombinations(Card playedCard, ArrayList<Card> table) {
+        Map<String, Set<Set<Card>>> mapCombinations = new HashMap<>();
+        this.initializeMapCombinations(mapCombinations);
 
-
-    public GameCombinationsService() {
-        this.allCombinations = new ArrayList<>();
-        this.mapCombinations = new HashMap<>();
-        this.initializeCombinations();
+        return this.createWinningCombinations(playedCard, table, mapCombinations);
     }
 
-    public ArrayList<ArrayList<Card>> getCombinations(Card playedCard, ArrayList<Card> table) {
-        this.createWinningCombinations(playedCard, table);
-
-        return this.allCombinations;
-    }
-
-    private void initializeCombinations() {
-        this.mapCombinations.put("equals", new LinkedHashSet<>());
-        this.mapCombinations.put("additions", new LinkedHashSet<>());
-        this.mapCombinations.put("multiAdditions", new LinkedHashSet<>());
-        this.mapCombinations.put("equalsCombined", new LinkedHashSet<>());
-    }
-
-    // manages equal, addition, multiAddition and equalsCombined combinations
-    private void addToMapCombinations(Set<Card> combination, String combinationId) {
-        if(combinationId.equals("equals")) {
-            Set<Set<Card>> equals = this.mapCombinations.get(combinationId);
-            equals.add(combination);
-        } else if(combinationId.equals("additions")) {
-            Set<Set<Card>> additions = this.mapCombinations.get(combinationId);
-            additions.add(combination);
-        } else if(combinationId.equals("multiAdditions")) {
-            Set<Set<Card>> multiAdditions = this.mapCombinations.get(combinationId);
-            multiAdditions.add(combination);
-        } else if(combinationId.equals("equalsCombined")) {
-            Set<Set<Card>> equalsCombined = this.mapCombinations.get(combinationId);
-            equalsCombined.add(combination);
-        }
+    private void initializeMapCombinations(Map<String, Set<Set<Card>>> mapCombinations) {
+        mapCombinations.put("equals", new LinkedHashSet<>());
+        mapCombinations.put("additions", new LinkedHashSet<>());
+        mapCombinations.put("multiAdditions", new LinkedHashSet<>());
+        mapCombinations.put("equalsCombined", new LinkedHashSet<>());
     }
 
     // merges all map combinations into one allCombinations with added played card
-    private void mergeMapCombinations(Card playedCard) {
-        ArrayList<ArrayList<Card>> mergedList = new ArrayList<>();
+    private List<ArrayList<Card>> mergeMapCombinations(Card playedCard, Map<String, Set<Set<Card>>> mapCombinations) {
+        List<ArrayList<Card>> mergedList = new ArrayList<>();
         // merge 
-        for(String combo: this.mapCombinations.keySet()) {
-            for(Set<Card> currCombination: this.mapCombinations.get(combo)) {
+        for(String combo: mapCombinations.keySet()) {
+            for(Set<Card> currCombination: mapCombinations.get(combo)) {
                 mergedList.add(new ArrayList<>(currCombination));
             }
             
@@ -66,23 +43,21 @@ public class GameCombinationsService {
         });
 
 
-        this.allCombinations = mergedList;
+        return mergedList;
 
-        System.out.println("all map combinations");
-        System.out.println(allCombinations.toString());
+        // System.out.println("all combinations:");
+        // System.out.println(allCombinations.toString());
     }
 
-    private void createWinningCombinations(Card playedCard, ArrayList<Card> currentTable) {
-        // reset all combinations
-        clearCombinations();
-
+    private List<ArrayList<Card>> createWinningCombinations(Card playedCard, ArrayList<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
+        
         // equal combinations can use card symbol or value to check if table card is duplicate of played card
         // check for table card == played card
         for(int i = 0; i < currentTable.size(); i++) {
             if(currentTable.get(i).getValue() == playedCard.getValue()) {
                 LinkedHashSet<Card> oneCardDuplicate = new LinkedHashSet<>();
                 oneCardDuplicate.add(currentTable.get(i));
-                this.addToMapCombinations(oneCardDuplicate, "equals");
+                mapCombinations.get("equals").add(oneCardDuplicate);
             }
         }
 
@@ -100,7 +75,7 @@ public class GameCombinationsService {
                         LinkedHashSet<Card> twoCardDuplicates = new LinkedHashSet<>();
                         twoCardDuplicates.add(currentTable.get(i));
                         twoCardDuplicates.add(currentTable.get(j));
-                        this.addToMapCombinations(twoCardDuplicates, "equals");
+                        mapCombinations.get("equals").add(twoCardDuplicates);
                     }
                 }
             }
@@ -123,39 +98,43 @@ public class GameCombinationsService {
                 threeCard.add(currentTable.get(threeDuplicatesTableIndexes[i]));
             }
             
-            this.addToMapCombinations(threeCard, "equals");
+            mapCombinations.get("equals").add(threeCard);
         }
 
 
         // generate combinations
-        findAdditionCombinations(playedCard.getValue(), currentTable);
-        findMultipleAdditionCombinations();
-        findEqualsCombinedCombinations();
-        mergeMapCombinations(playedCard);
+        findAdditionCombinations(playedCard.getValue(), currentTable, mapCombinations);
+        findMultipleAdditionCombinations(mapCombinations);
+        findEqualsCombinedCombinations(mapCombinations);
+        List<ArrayList<Card>> allCombinations = mergeMapCombinations(playedCard, mapCombinations);
 
         // System.out.println("EQUAL COMBINATIONS:");
-        // System.out.println(this.mapCombinations.get("equals"));
+        // System.out.println(mapCombinations.get("equals"));
         // System.out.println("ADDITION COMBINATIONS:");
-        // System.out.println(this.mapCombinations.get("additions"));
+        // System.out.println(mapCombinations.get("additions"));
         // System.out.println("MULTI ADDITION COMBINATIONS:");
-        // System.out.println(this.mapCombinations.get("multiAdditions"));
+        // System.out.println(mapCombinations.get("multiAdditions"));
         // System.out.println("EQUAL COMBINED COMBINATIONS:");
-        // System.out.println(this.mapCombinations.get("equalsCombined"));
+        // System.out.println(mapCombinations.get("equalsCombined"));
         // System.out.println("ALL COMBINATIONS:");
-        // System.out.println(this.allCombinations);
+        // System.out.println(allCombinations);
+
+        return allCombinations;
+
+        
 
     }
 
     // generates all unique combinations where value of n cards == played card value
-    private void findAdditionCombinations(int targetSum, ArrayList<Card> currentTable) {
-        additionCombinationsRecursion(0, new ArrayList<>(), 0, targetSum, currentTable);
+    private void findAdditionCombinations(int targetSum, ArrayList<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
+        additionCombinationsRecursion(0, new ArrayList<>(), 0, targetSum, currentTable, mapCombinations);
     }
 
-    private void additionCombinationsRecursion(int currentI, ArrayList<Card> currentCombination, int totalSum, int targetSum, ArrayList<Card> currentTable) {
+    private void additionCombinationsRecursion(int currentI, ArrayList<Card> currentCombination, int totalSum, int targetSum, ArrayList<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
 
         if(totalSum == targetSum) {
             if(currentCombination.size() > 1) {
-                this.addToMapCombinations(new LinkedHashSet<>(currentCombination), "additions");
+                mapCombinations.get("additions").add(new LinkedHashSet<>(currentCombination));
             }
             return;
         }
@@ -171,21 +150,21 @@ public class GameCombinationsService {
         // cards are always one value unless the card is ACE which can be both 1 or 11
         for(int value: card.getPossibleValues()) {
             if(totalSum + value <= targetSum) {
-                additionCombinationsRecursion(currentI + 1, currentCombination, totalSum + value, targetSum, currentTable);
+                additionCombinationsRecursion(currentI + 1, currentCombination, totalSum + value, targetSum, currentTable, mapCombinations);
             }
         }
 
         currentCombination.remove(currentCombination.size() - 1);
-        additionCombinationsRecursion(currentI + 1, currentCombination, totalSum, targetSum, currentTable);
+        additionCombinationsRecursion(currentI + 1, currentCombination, totalSum, targetSum, currentTable, mapCombinations);
     }
 
     // generates all combinations of unique addition combinations: 
     // addition combinations: [5-c, 3-c], [5-c, 3-d], [5-d, 3-d], [5-d, 3-c] => [5-c, 3-c, 5-d, 3-d] + played card
-    private void findMultipleAdditionCombinations() {
-        int n = this.mapCombinations.get("additions").size();
+    private void findMultipleAdditionCombinations(Map<String, Set<Set<Card>>> mapCombinations) {
+        int n = mapCombinations.get("additions").size();
         int subsetCount = 1 << n; // 2^n subsets
 
-         ArrayList<Set<Card>> additionsList = new ArrayList<>(this.mapCombinations.get("additions"));
+         ArrayList<Set<Card>> additionsList = new ArrayList<>(mapCombinations.get("additions"));
 
         for (int mask = 1; mask < subsetCount; mask++) {
             ArrayList<Card> merged = new ArrayList<>();
@@ -209,17 +188,17 @@ public class GameCombinationsService {
             }
 
             if (valid && Integer.bitCount(mask) > 1) {
-                this.addToMapCombinations(new LinkedHashSet<>(merged), "multiAdditions");
+                mapCombinations.get("multiAdditions").add(new LinkedHashSet<>(merged));
             }
         }
 
     }
 
     // merges equals + additions and equals + multiadditions
-    private void findEqualsCombinedCombinations() {
-        Set<Set<Card>> equalsCopy = new LinkedHashSet<>(this.mapCombinations.get("equals"));
-        Set<Set<Card>> additionsCopy = new LinkedHashSet<>(this.mapCombinations.get("additions"));
-        Set<Set<Card>> multiAdditionsCopy = new LinkedHashSet<>(this.mapCombinations.get("multiAdditions"));
+    private void findEqualsCombinedCombinations(Map<String, Set<Set<Card>>> mapCombinations) {
+        Set<Set<Card>> equalsCopy = new LinkedHashSet<>(mapCombinations.get("equals"));
+        Set<Set<Card>> additionsCopy = new LinkedHashSet<>(mapCombinations.get("additions"));
+        Set<Set<Card>> multiAdditionsCopy = new LinkedHashSet<>(mapCombinations.get("multiAdditions"));
 
         for(Set<Card> equals: equalsCopy) {
             for(Set<Card> addition: additionsCopy) {
@@ -229,7 +208,7 @@ public class GameCombinationsService {
                 }
                 Set<Card> additionEquals = new LinkedHashSet<>(addition);
                 additionEquals.addAll(equals);
-                this.addToMapCombinations(additionEquals, "equalsCombined");
+                mapCombinations.get("equalsCombined").add(additionEquals);
             }
 
             for(Set<Card> multiAddition: multiAdditionsCopy) {
@@ -239,7 +218,7 @@ public class GameCombinationsService {
                 }
                 Set<Card> multiAdditionEquals = new LinkedHashSet<>(multiAddition);
                 multiAdditionEquals.addAll(equals);
-                this.addToMapCombinations(multiAdditionEquals, "equalsCombined");
+                mapCombinations.get("equalsCombined").add(multiAdditionEquals);
             }
         }
 
@@ -258,10 +237,5 @@ public class GameCombinationsService {
         }
         
         return overlap;
-    }
-
-    public void clearCombinations() {
-        this.allCombinations = new ArrayList<>();
-        this.initializeCombinations();
     }
 }

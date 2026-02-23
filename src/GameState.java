@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class GameState {
     private CardDeck deck;
@@ -14,7 +15,7 @@ public class GameState {
     private HashMap<String, Player> gameOverPlayers;
     private Player[] players;
     private ArrayList<Card> currentTable;
-    private ArrayList<ArrayList<Card>> allCombinations;
+    private List<ArrayList<Card>> allCombinations;
     private GamePhase gamePhase;
 
 
@@ -119,11 +120,11 @@ public class GameState {
         this.currentTable.add(card);
     }
     
-    public ArrayList<ArrayList<Card>> getAllCombinations() {
+    public List<ArrayList<Card>> getAllCombinations() {
         return this.allCombinations;
     }
 
-    public void setAllCombinations(ArrayList<ArrayList<Card>> combinations) {
+    public void setAllCombinations(List<ArrayList<Card>> combinations) {
         this.allCombinations = combinations;
     }
 
