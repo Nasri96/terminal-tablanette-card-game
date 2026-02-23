@@ -81,15 +81,18 @@ public class Player {
         this.currentHand = new ArrayList<>();
         this.pointsWon = 0;
         this.tablePoints = 0;
-        printFields();
     }
 
-    public void printFields() {
-        System.out.println("player name: " + this.name);
-        System.out.println("player lastCardsWon: " + this.lastCardsWon);
-        System.out.println("player currentHand: " + this.currentHand);
-        System.out.println("player pointsWon: " + this.pointsWon);
-        System.out.println("player tablePoints: " + this.tablePoints);
+    public String toString() {
+        String output = 
+                """
+                name: %s,
+                lastCardsWon: %s,
+                currentHand: %s,
+                pointsWon: %d,
+                tablePoints: %d
+                """.formatted(name, lastCardsWon, currentHand, pointsWon, tablePoints);
+        return output;
     }
 
     public void printCurrentHand() {

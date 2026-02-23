@@ -1,25 +1,8 @@
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 public class Game {
-    private CardDeck deck;
-    private int playerMoveIndex;
-    private int roundsPlayed;
-    private boolean roundChanged;
-    private int winningScore;
-    private Player lastWinnerInRound;
-    private Player lastWinnerOfMoreCards;
-    private Player lastWinnerOfTablePoint;
-    private HashMap<String, Player> gameOverPlayers;
-    private ArrayList<ArrayList<Card>> allCombinations;
-    private HashMap<String, Set<Set<Card>>> mapCombinations;
     private GameCombinationsService combinationsService;
-    private Player[] players;
-    private ArrayList<Card> currentTable;
     private GameState gameState;
-    public GamePhase gamePhase;
     public TerminalUI ui;
     
     public Game(Player[] players) {

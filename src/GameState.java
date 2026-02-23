@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class GameState {
@@ -134,4 +135,24 @@ public class GameState {
         this.gamePhase = nextGamePhase;
     }
 
+    public String toString() {
+        String output = 
+                """
+                %s,
+                playerMoveIndex: %d,
+                roundsPlayed: %d,
+                roundChanged: %b,
+                winningScore: %d,
+                lastWinnerInRound: %s,
+                lastWinnerOfMoreCards: %s,
+                lastWinnerOfTablePoint: %s,
+                gameOverPlayers: %s,
+                players: %s,
+                currentTable: %s,
+                allCombinations: %s
+                """.formatted(deck, playerMoveIndex, roundsPlayed, roundChanged, winningScore, lastWinnerInRound, 
+                    lastWinnerOfMoreCards, lastWinnerOfTablePoint, gameOverPlayers, Arrays.toString(players), currentTable, allCombinations);
+        
+        return output;
+    }
 }
