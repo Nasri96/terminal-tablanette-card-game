@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.List;
 
 public class TerminalUICpu extends TerminalUI {
     
@@ -34,7 +35,7 @@ public class TerminalUICpu extends TerminalUI {
                 wait(500);
                 System.out.println("------------------------ TURN_PICK_COMBINATION");
                 wait(500);
-                ArrayList<Card> table = gameState.getCurrentTable();
+                List<Card> table = gameState.getCurrentTable();
                 System.out.println(cpu.getName() + " played card: " + table.get(table.size() - 1));
                 System.out.println(cpu.getName() + " is picking card combination...");
                 this.wait(2000);

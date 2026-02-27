@@ -1,20 +1,39 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class CardDeck {
     private static final char[] SUITS = { 'c', 'd', 'h', 's' };
     private static final String[] SYMBOLS = { "2", "3", "4", "5", "6", "7", "8", "9", "10", "A", "J", "Q", "K" };
-    private ArrayList<Card> deck;
+    private final List<Card> deck;
 
 
-    public CardDeck() {
-        this.deck = this.createDeck();
+    public CardDeck(List<Card> deck) {
+        this.deck = List.copyOf(deck);
     }
 
-    private ArrayList<Card> createDeck() {
-        ArrayList<Card> newDeck = new ArrayList<>();
+    public static CardDeck initial() {
+        return new CardDeck(createDeck());
+    }
+
+    public CardDeck withRemovedCards(int numOfCards) {
+        List<Card> withRemovedCards = new ArrayList<>(deck.subList(numOfCards, deck.size()));
+
+        return new CardDeck(withRemovedCards);
+    }
+
+    public DrawResult drawCard() {
+        Card card = deck.get(0);
+
+        List<Card> withRemovedCard = new ArrayList<>(deck.subList(1, deck.size()));
+
+        return new DrawResult(card, new CardDeck(withRemovedCard));
+    }
+
+    private static List<Card> createDeck() {
+        List<Card> newDeck = new ArrayList<>();
         // create cards from 2 - K symbols for all suits
-        for(int i = 0; i < SUITS.length - 3; i++) {
+        for(int i = 0; i < SUITS.length - 2; i++) {
             // cards 2-9 give 0 points, exception is 2 club which awards one point, rest 10-K are one point with exception of 10 diamond which is two points
             for(int j = 0; j < SYMBOLS.length; j++) {
                 if(j < 8) {
@@ -42,20 +61,20 @@ public class CardDeck {
     }
 
     public void resetDeck() {
-        this.deck = createDeck();
+        // this.deck = createDeck();
     }
 
-    public ArrayList<Card> getDeck() {
+    public List<Card> getDeck() {
         return this.deck;
     }
 
-    public void shuffleDeck() {
-        Collections.shuffle(this.deck);
+    public CardDeck shuffled() {
+        List<Card> shuffled = new ArrayList<>(this.deck);
+        Collections.shuffle(shuffled);
+
+        return new CardDeck(shuffled);
     }
 
-    public Card dealCard(int i) {
-        return this.deck.remove(i);
-    }
 
     // force dealing card of given symbol
     public Card dealCard(String symbol) {

@@ -3,10 +3,10 @@ import java.util.List;
 import java.util.Objects;
 
 public class Card {
-    private char suit;
-    private String symbol;
-    private int value;
-    private int points;
+    private final char suit;
+    private final String symbol;
+    private final int value;
+    private final int points;
 
     public Card(char suit, String symbol, int value, int points) {
         this.suit = suit;

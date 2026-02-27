@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.List;
 
 public class TerminalUI {
     private Scanner scanner;
@@ -12,11 +13,12 @@ public class TerminalUI {
 
     public void start() {
         TerminalUICpu uiCpu = new TerminalUICpu(game);
+        
 
         while(true) {
             GameState gameState = this.game.getGameState();
-            GamePhase gamePhase = this.game.getGamePhase();
-            // System.out.println(gameState);
+            GamePhase gamePhase = gameState.getGamePhase();
+
             // if current player is cpu, process cpu inputs
             Player player = gameState.getCurrentPlayerMove();
             if(player instanceof PlayerCpu) {
@@ -37,6 +39,7 @@ public class TerminalUI {
                 if(commandInput.equals("start")) {
                     player.actionStart(this.game);
                 }
+
             }
 
             if(gamePhase == GamePhase.TURN_PLAY_CARD) {
@@ -53,7 +56,7 @@ public class TerminalUI {
             }
 
             if(gamePhase == GamePhase.TURN_PICK_COMBINATION) {
-                ArrayList<Card> table = gameState.getCurrentTable();
+                List<Card> table = gameState.getCurrentTable();
                 printTable(gameState);
                 System.out.println("------------------------ TURN_PICK_COMBINATION");
                 System.out.println("Played card: " + table.get(gameState.getCurrentTable().size() - 1));
@@ -173,7 +176,7 @@ public class TerminalUI {
                     System.out.println(-1 +  ": Play card only");
                     break;
                 }
-                ArrayList<Card> currCombination = gameState.getAllCombinations().get(i);
+                List<Card> currCombination = gameState.getAllCombinations().get(i);
                 System.out.print(i + 1 + ": [ ");
                 for(int j = 0; j < currCombination.size(); j++) {
                     if(currCombination.size() == 2) {
@@ -206,7 +209,7 @@ public class TerminalUI {
         int newPoints = 0;
         if(lastWinner != null) {
             System.out.println(lastWinner.getName() + " carries the last cards from table " + lastWinner.getLastCardsWon());
-            ArrayList<Card> wonCards = lastWinner.getLastCardsWon();
+            List<Card> wonCards = lastWinner.getLastCardsWon();
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
@@ -231,7 +234,7 @@ public class TerminalUI {
         int newPoints = 0;
         if(lastTurnWinner.getLastCardsWon().size() > 0) {
             // print won cards
-            ArrayList<Card> wonCards = lastTurnWinner.getLastCardsWon();
+            List<Card> wonCards = lastTurnWinner.getLastCardsWon();
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
@@ -292,7 +295,7 @@ public class TerminalUI {
         System.out.println("your input was > " + input);
         // check if input was correct and apply rules
         Player player = gameState.getCurrentPlayerMove();
-        ArrayList<Card> playerHand = player.getCurrentHand();
+        List<Card> playerHand = player.getCurrentHand();
         String[] cardInput = input.split("-"); // "split input like 5-d to 5 and d"
         
         if(cardInput.length != 2) {
@@ -321,7 +324,7 @@ public class TerminalUI {
     public void printTable(GameState gameState) {
         int rows = 9;
         int cols = 40;
-        ArrayList<ArrayList<Card>> cardRows = calcCardRows(gameState);
+        List<List<Card>> cardRows = calcCardRows(gameState);
         // calc offset for current row
         int offSetStart = 0;
         int offSetRow = cardRows.size() / 2;
@@ -358,7 +361,7 @@ public class TerminalUI {
                 // start printing cards at the middle of table and apply offset which is based on how many card rows are there
                 if(cardRows.size() > 0 && i + offSetRow - offSetStart == rows / 2 && j == ((cols / 2) - (3 * cardRows.get(0).size()) / 2 - 1)) {
                     // remove one list from cardRows and print it
-                    ArrayList<Card> cards = cardRows.remove(0);
+                    List<Card> cards = cardRows.remove(0);
                     int skippedCols = printCurrentTable(cards);
                     offSetStart++;
                     j+= skippedCols;
@@ -381,7 +384,7 @@ public class TerminalUI {
     }
 
     public int getToStringLengthOfCards(GameState gameState) {
-        ArrayList<Card> cards = gameState.getCurrentPlayerMove().getCurrentHand();
+        List<Card> cards = gameState.getCurrentPlayerMove().getCurrentHand();
         int lengthOfAllCards = 0;
         for(Card card: cards) {
             lengthOfAllCards+= card.getToStringLength();
@@ -391,13 +394,13 @@ public class TerminalUI {
     }
 
     // every four cards create new array list for card rows
-    public ArrayList<ArrayList<Card>> calcCardRows(GameState gameState) {
-        ArrayList<Card> table = gameState.getCurrentTable();
-        ArrayList<ArrayList<Card>> cardRows = new ArrayList<>();
+    public List<List<Card>> calcCardRows(GameState gameState) {
+        List<Card> table = gameState.getCurrentTable();
+        List<List<Card>> cardRows = new ArrayList<>();
 
         if(table.size() > 0) {
             int cardCurrRow = 0;
-            ArrayList<Card> cards = new ArrayList<>();
+            List<Card> cards = new ArrayList<>();
             cardRows.add(cards);
             for(int i = 1; i <= table.size(); i++) {
                 cardRows.get(cardCurrRow).add(table.get(i - 1));
@@ -413,8 +416,8 @@ public class TerminalUI {
         return cardRows;
     }
 
-    public int printCurrentTable(ArrayList<Card> cardsToPrint) {
-        ArrayList<Card> table = this.game.getGameState().getCurrentTable();
+    public int printCurrentTable(List<Card> cardsToPrint) {
+        List<Card> table = this.game.getGameState().getCurrentTable();
 
         // one card is 3 spaces long
         int skippedCols = 0;

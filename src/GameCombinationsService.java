@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class GameCombinationsService {
     
-    public List<ArrayList<Card>> getCombinations(Card playedCard, ArrayList<Card> table) {
+    public List<List<Card>> getCombinations(Card playedCard, List<Card> table) {
         Map<String, Set<Set<Card>>> mapCombinations = new HashMap<>();
         this.initializeMapCombinations(mapCombinations);
 
@@ -22,8 +22,8 @@ public class GameCombinationsService {
     }
 
     // merges all map combinations into one allCombinations with added played card
-    private List<ArrayList<Card>> mergeMapCombinations(Card playedCard, Map<String, Set<Set<Card>>> mapCombinations) {
-        List<ArrayList<Card>> mergedList = new ArrayList<>();
+    private List<List<Card>> mergeMapCombinations(Card playedCard, Map<String, Set<Set<Card>>> mapCombinations) {
+        List<List<Card>> mergedList = new ArrayList<>();
         // merge 
         for(String combo: mapCombinations.keySet()) {
             for(Set<Card> currCombination: mapCombinations.get(combo)) {
@@ -33,7 +33,7 @@ public class GameCombinationsService {
         }
 
         // add played card to all merged
-        for(ArrayList<Card> combo: mergedList) {
+        for(List<Card> combo: mergedList) {
             combo.add(playedCard);
         } 
 
@@ -49,7 +49,7 @@ public class GameCombinationsService {
         // System.out.println(allCombinations.toString());
     }
 
-    private List<ArrayList<Card>> createWinningCombinations(Card playedCard, ArrayList<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
+    private List<List<Card>> createWinningCombinations(Card playedCard, List<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
         
         // equal combinations can use card symbol or value to check if table card is duplicate of played card
         // check for table card == played card
@@ -106,7 +106,7 @@ public class GameCombinationsService {
         findAdditionCombinations(playedCard.getValue(), currentTable, mapCombinations);
         findMultipleAdditionCombinations(mapCombinations);
         findEqualsCombinedCombinations(mapCombinations);
-        List<ArrayList<Card>> allCombinations = mergeMapCombinations(playedCard, mapCombinations);
+        List<List<Card>> allCombinations = mergeMapCombinations(playedCard, mapCombinations);
 
         // System.out.println("EQUAL COMBINATIONS:");
         // System.out.println(mapCombinations.get("equals"));
@@ -126,11 +126,11 @@ public class GameCombinationsService {
     }
 
     // generates all unique combinations where value of n cards == played card value
-    private void findAdditionCombinations(int targetSum, ArrayList<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
+    private void findAdditionCombinations(int targetSum, List<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
         additionCombinationsRecursion(0, new ArrayList<>(), 0, targetSum, currentTable, mapCombinations);
     }
 
-    private void additionCombinationsRecursion(int currentI, ArrayList<Card> currentCombination, int totalSum, int targetSum, ArrayList<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
+    private void additionCombinationsRecursion(int currentI, List<Card> currentCombination, int totalSum, int targetSum, List<Card> currentTable, Map<String, Set<Set<Card>>> mapCombinations) {
 
         if(totalSum == targetSum) {
             if(currentCombination.size() > 1) {
@@ -164,10 +164,10 @@ public class GameCombinationsService {
         int n = mapCombinations.get("additions").size();
         int subsetCount = 1 << n; // 2^n subsets
 
-         ArrayList<Set<Card>> additionsList = new ArrayList<>(mapCombinations.get("additions"));
+         List<Set<Card>> additionsList = new ArrayList<>(mapCombinations.get("additions"));
 
         for (int mask = 1; mask < subsetCount; mask++) {
-            ArrayList<Card> merged = new ArrayList<>();
+            List<Card> merged = new ArrayList<>();
             boolean valid = true;
 
             for (int i = 0; i < n; i++) {

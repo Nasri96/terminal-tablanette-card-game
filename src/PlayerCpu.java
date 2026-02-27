@@ -1,9 +1,14 @@
 import java.util.ArrayList;
+import java.util.List;
 
 public class PlayerCpu extends Player {
     
-    public PlayerCpu(String name) {
-        super(name);
+    public PlayerCpu(String id, String name, List<Card> cardsWon, List<Card> lastCardsWon, List<Card> currentHand, int pointsWon, int tablePointsWon) {
+        super(id, name, cardsWon, lastCardsWon, currentHand, pointsWon, tablePointsWon);
+    }
+
+    public static PlayerCpu initial(String id, String name) {
+        return new PlayerCpu(id, name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0);
     }
 
 
@@ -12,7 +17,7 @@ public class PlayerCpu extends Player {
     }
 
     public void actionPlayCard(Game game, Object payload) {
-        ArrayList<Card> cpuHand = this.getCurrentHand();
+        List<Card> cpuHand = this.getCurrentHand();
         int max = cpuHand.size() - 1;
         int min = 0;
 
@@ -24,7 +29,7 @@ public class PlayerCpu extends Player {
 
     public void actionPickCombination(Game game, Object payload) {
         GameState gameState = game.getGameState();
-        ArrayList<ArrayList<Card>> combinations = new ArrayList<>(gameState.getAllCombinations());
+        List<List<Card>> combinations = new ArrayList<>(gameState.getAllCombinations());
 
         // no combinations to pick
         if(combinations.size() == 0) {
@@ -51,7 +56,7 @@ public class PlayerCpu extends Player {
                 return bTotal - aTotal;
             });
 
-            ArrayList<Card> highestPointCombination = combinations.get(0);
+            List<Card> highestPointCombination = combinations.get(0);
             int indexOfHighestPoint = gameState.getAllCombinations().indexOf(highestPointCombination);
 
             super.actionPickCombination(game, indexOfHighestPoint);
