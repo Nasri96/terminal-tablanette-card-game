@@ -44,6 +44,7 @@ public class TerminalUI {
 
             if(gamePhase == GamePhase.TURN_PLAY_CARD) {
                 printTable(gameState); 
+                System.out.println("--- " + player.getName() + " on the move:");
                 System.out.println("------------------------ TURN_PLAY_CARD");
                 System.out.println("Play your card: (input needs to be same as it is shown in 'Your cards:')");
                 String commandInput = this.scanner.nextLine();
@@ -203,13 +204,14 @@ public class TerminalUI {
         
     }
 
-    public void printLastWinnerInRound(GameState gameState) {
-        Player lastWinner = gameState.getLastWinnerInRound();
+    public void printLastWinnerInRound(GameState state) {
+        String lastWinnerInRoundId = state.getLastWinnerInRound();
         
-        int newPoints = 0;
-        if(lastWinner != null) {
+        if(lastWinnerInRoundId != null) {
+            Player lastWinner = state.findPlayerById(lastWinnerInRoundId);
             System.out.println(lastWinner.getName() + " carries the last cards from table " + lastWinner.getLastCardsWon());
             List<Card> wonCards = lastWinner.getLastCardsWon();
+            int newPoints = 0;
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
@@ -217,36 +219,40 @@ public class TerminalUI {
             System.out.println(lastWinner.getName() + " received " + newPoints + " points");
         }
         wait(1000);
-        Player lastWinnerOfMoreCards = gameState.getLastWinnerOfMoreCards();
-        if(lastWinnerOfMoreCards != null) {
-            System.out.println(lastWinnerOfMoreCards.getName() + " awarded 3 points for winning more cards");
+        String lastWinnerOfMoreCardsId = state.getLastWinnerOfMoreCards();
+        if(lastWinnerOfMoreCardsId != null) {
+            System.out.println(state.findPlayerById(lastWinnerOfMoreCardsId).getName() + " awarded 3 points for winning more cards");
         } else {
             System.out.println("Both players won equal number of cards. No points points awarded");
         }
         wait(500);
-        System.out.println(lastWinner.getName() + " has a total of " + lastWinner.getPointsWon() + " points");
+        for(Player player: state.getPlayersList()) {
+            System.out.println(player.getName() + " has a total of " + player.getPointsWon() + " points");
+            wait(500);
+        }
+        
     }
 
-    public void printPointsAwarded(GameState gameState) {
-        Player lastTurnWinner = gameState.getCurrentPlayerMove();
-        Player lastWinnerOfTablePoint = gameState.getLastWinnerOfTablePoint();
+    public void printPointsAwarded(GameState state) {
+        Player currentPlayer = state.getCurrentPlayerMove();
+        String lastWinnerOfTablePointId = state.getLastWinnerOfTablePoint();
 
         int newPoints = 0;
-        if(lastTurnWinner.getLastCardsWon().size() > 0) {
+        if(currentPlayer.getLastCardsWon().size() > 0) {
             // print won cards
-            List<Card> wonCards = lastTurnWinner.getLastCardsWon();
+            List<Card> wonCards = currentPlayer.getLastCardsWon();
             for(Card card: wonCards) {
                 newPoints+= card.getPoints();
             }
 
-            System.out.println(lastTurnWinner.getName() + " received " + newPoints + " points");
+            System.out.println(currentPlayer.getName() + " received " + newPoints + " points");
             wait(1000);
             // check if player scored table point
-            if(lastWinnerOfTablePoint != null) {
-                System.out.println(lastWinnerOfTablePoint.getName() + " received " + 1 + " table point");
+            if(lastWinnerOfTablePointId != null) {
+                System.out.println(currentPlayer.getName() + " received " + 1 + " table point");
             }
             wait(1000);
-            System.out.println(lastTurnWinner.getName() + " has a total of " + lastTurnWinner.getPointsWon() + " points");
+            System.out.println(currentPlayer.getName() + " has a total of " + currentPlayer.getPointsWon() + " points");
         }
     }
 

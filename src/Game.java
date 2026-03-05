@@ -1,7 +1,8 @@
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public class Game {
     private GameCombinationsService combinationsService;
@@ -32,7 +33,7 @@ public class Game {
 
     public GameState updateGame(GameInput input) {
         GameState state = this.gameState;
-        // System.out.println(state);
+        System.out.println(state);
         GamePhase gamePhase = state.getGamePhase();
         Player nextPlayerTurn = state.getCurrentPlayerMove();
         // check turn ownership
@@ -46,84 +47,74 @@ public class Game {
 
             case GAME_SETUP:
                 if(input.action == GameAction.START) {
-                    ResultStart result = handleStart(this.gameState);
-                    // this.gamePhase = GamePhase.TURN_PLAY_CARD;
-                    this.gameState = state = state
-                        .withDeck(result.deck())
-                        .withCurrentTable(result.currentTable())
-                        .withPlayers(result.players())
+                    state = handleStart(this.gameState);
+                    return this.gameState = state 
                         .withGamePhase(GamePhase.TURN_PLAY_CARD);
-                       
                 }
 
-                // System.out.println(state.getGamePhase() + " INSIDE GAME SETUP");
                 return state;
 
 
             case TURN_PLAY_CARD:
                 if(input.action == GameAction.PLAY_CARD) {
-                    ResultPlayCard result = handlePlayCard(state, input.payload);
-                    System.out.println(result);
-                    this.gameState = state = state
-                        .withPlayers(result.updatedPlayers())
-                        .withAllCombinations(result.allCombinations())
-                        .withCurrentTable(result.updatedCurrentTable())
+                    state = handlePlayCard(state, input.payload);
+                    return this.gameState = state
                         .withGamePhase(GamePhase.TURN_PICK_COMBINATION);
                 }
+
 
                 return state;
 
             case TURN_PICK_COMBINATION:
                 if(input.action == GameAction.PICK_COMBINATION) {
                     state = handlePickCombination(state, input.payload);
-                    state = state
+                    this.gameState = state
                         .withGamePhase(GamePhase.TURN_RESOLVE);
-                    this.gameState = state;
-                    System.out.println(this.gameState);
                 }
 
                 return state;
                 
             case TURN_RESOLVE:
                 if(input.action == GameAction.CONTINUE) {
-                    GamePhase turnResult = handleResolveTurn();
-                    this.gameState.setGamePhase(turnResult);
+                    GamePhase turnResult = handleResolveTurn(state);
+                    return this.gameState = state
+                        .withGamePhase(turnResult);
                 }
 
                 return state;
 
             case ROUND_END:
                 if(input.action == GameAction.CONTINUE) {
-                    handleRoundEnd();
+                    state = handleRoundEnd(state);
+                    return this.gameState = state
+                        .withGamePhase(GamePhase.ROUND_START);
                     // game over possible also possible after round end
-                    if(this.isGameOver()) {
-                        this.gameState.setGamePhase(GamePhase.GAME_OVER);
-                        return state;
-                    }
+                    // if(this.isGameOver(state)) {
+                    //     this.gameState.setGamePhase(GamePhase.GAME_OVER);
+                    //     return state;
+                    // }
 
-                    this.gameState.setGamePhase(GamePhase.ROUND_START);
+                    // this.gameState.setGamePhase(GamePhase.ROUND_START);
                 }
 
                 return state;
 
             case ROUND_START:
                 if(input.action == GameAction.CONTINUE) {
-                    handleRoundStart();
-                    this.gameState.setGamePhase(GamePhase.DEAL_CARDS);
+                    state = handleRoundStart(state);
+                    return this.gameState = state
+                        .withGamePhase(GamePhase.TURN_PLAY_CARD);
                 }
 
                 return state;
 
             case NEXT_TURN:
                 if(input.action == GameAction.CONTINUE) {
-                    handleNextTurn();
-
-                    boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
-                    if(playersCurrentHandsEmpty) {
-                        this.gameState.setGamePhase(GamePhase.DEAL_CARDS);
-                    } else {
-                        this.gameState.setGamePhase(GamePhase.TURN_PLAY_CARD);
-                    }
+                    state = handleNextTurn(state);
+                    boolean playersCurrentHandsEmpty = checkPlayersCurrentHand(state);
+                    this.gameState = state
+                        .withIf(playersCurrentHandsEmpty, s -> s.withGamePhase(GamePhase.DEAL_CARDS))
+                        .withIf(!playersCurrentHandsEmpty, s -> s.withGamePhase(GamePhase.TURN_PLAY_CARD));
                 }
 
                 return state;
@@ -131,7 +122,10 @@ public class Game {
             case DEAL_CARDS:
                 if(input.action == GameAction.CONTINUE) {
                     // handleDealCards();
-                    this.gameState.setGamePhase(GamePhase.TURN_PLAY_CARD);
+                    state = handleNewDealCards(state);
+                    this.gameState = state
+                        .withGamePhase(GamePhase.TURN_PLAY_CARD);
+                    System.out.println(this.gameState);
                 }
 
                 return state;
@@ -151,120 +145,149 @@ public class Game {
                 }
 
                 return state;
-                
+    
         }
 
     }
 
-    private ResultStart handleStart(GameState state) {
-        // shuffle the deck
-        CardDeck shuffledDeck = state.getDeck().shuffled();
-        List<Player> playersList = state.getPlayersList();
-        List<Card> currentTable = state.getCurrentTable();
-
-        // deal cards, three cards to each player in two rounds, then four cards to the table
-        DealCardsToPlayersResult afterDealCards = handleDealCards(shuffledDeck, playersList);
-        DealCardsToTableResult afterDealToTable = dealCardsToTable(afterDealCards.deck(), currentTable);
-        return new ResultStart(afterDealCards.deck(), afterDealCards.players(), afterDealToTable.currentTable());
-
+    private List<String> getOrderIds(GameState state) {
+        int playerMoveIndex = state.getPlayerMoveIndex();
+        // get the id player order, player at playerMoveIndex is the one who receives the first round of cards
+        return state.getPlayersList().stream()
+            .map(p -> state.getPlayersList().indexOf(p))
+            .sorted((index1, index2) -> {
+                if(index1 == playerMoveIndex) {
+                    return -1;
+                } 
+                if(index2 == playerMoveIndex) {
+                    return 1;
+                }
+                if(index1 == index2) {
+                    return 0;
+                }
+                return 0;
+            })
+            .map(index -> state.getPlayersList().get(index).getId())
+            .toList();
     }
 
-    private ResultPlayCard handlePlayCard(GameState state, Object payload) {
-        Player player = state.getCurrentPlayerMove();
-        List<List<Card>> allCombinations = new ArrayList<>();
-        List<Card> currentTable = new ArrayList<>(state.getCurrentTable());
+    private List<Card> combine(List<Card> r1, List<Card> r2) {
+        List<Card> combined = new ArrayList<>(r1);
+        combined.addAll(r2);
+        return combined;
+    }
 
-        // find which card is played
-        Card playedCard = findPlayedCard(state, String.valueOf(payload));
-        Player updatedPlayer = player.withRemovedCard(playedCard);
-        // remove card from player's current hand
-        // player.playCard(playedCard);
-        // find winning combinations
-        allCombinations = this.combinationsService.getCombinations(playedCard, new ArrayList<>(state.getCurrentTable()));
-        // add played card to table
+
+    private GameState handleNewDealCards(GameState state) {
+        GamePhase phase = state.getGamePhase();
+        List<Card> deck = state.getCardDeck().getDeck();
+
+        // .get(0) the id of one that receives cards first, .get(1) is the id of the current card dealer
+        List<String> orderIds = this.getOrderIds(state);
+        System.out.println(orderIds);
+
+        
+        List<Card> round1Receiver = deck.subList(0, 1);
+        List<Card> round1Dealer = deck.subList(1, 2);
+        List<Card> round2Receiver = deck.subList(2, 3);
+        List<Card> round2Dealer = deck.subList(3, 4);
+        // if game phase is setup or start, deal cards to table also
+        List<Card> dealtTableCards = (phase == GamePhase.GAME_SETUP || phase == GamePhase.ROUND_START) ? deck.subList(4, 5) : List.of();
+        long countDealtCards = Stream.of(round1Receiver, round1Dealer, round2Receiver, round2Dealer, dealtTableCards)
+            .flatMap(Collection::stream)
+            .count();
+        System.out.println("deck before update: " + deck);
+        List<Card> remaining = deck.subList((int) countDealtCards, deck.size());
+        System.out.println("deck after update: " + remaining);
+
+        String firstReceiverId = orderIds.get(0);
+        String dealerId = orderIds.get(1);
+
+        return state
+            .transformPlayer(firstReceiverId, p -> p.withCurrentHand(combine(round1Receiver, round2Receiver)))
+            .transformPlayer(dealerId, p -> p.withCurrentHand(combine(round1Dealer, round2Dealer)))
+            .transformCardDeck(d -> d.withDeck(remaining))
+            .withCurrentTable(combine(state.getCurrentTable(), dealtTableCards));
+    }
+
+    private GameState handleStart(GameState state) {
+        // shuffle the deck
+        // deal cards to players and to table
+        // move to PLAY_CARD phase
+        return state
+            .transformCardDeck(d -> d.shuffled())
+            .transform(this::handleNewDealCards);
+    }
+
+    private List<Card> removeCardFromPlayerHand(GameState state, Card playedCard) {
+        Player player = state.getCurrentPlayerMove();
+        List<Card> currentHand = new ArrayList<>(player.getCurrentHand());
+        currentHand.remove(playedCard);
+        return List.copyOf(currentHand);
+    } 
+
+    private List<Card> addCardToTable(GameState state, Card playedCard) {
+        List<Card> currentTable = new ArrayList<>(state.getCurrentTable());
         currentTable.add(playedCard);
-        // this.playCardToTable(playedCard);
-        List<Player> updatedPlayers = state.getPlayersList().stream()
-        .map(p -> {
-            return p.getId().equals(updatedPlayer.getId()) ? updatedPlayer : p;
-        })
-        .toList();
-        return new ResultPlayCard(updatedPlayers, allCombinations, currentTable);
+        return List.copyOf(currentTable);
+    }
+
+    private GameState handlePlayCard(GameState state, Object payload) {
+        // find which card is played
+        // remove card from player's current hand
+        // add played card to table
+        // get winning combinations
+        Player player = state.getCurrentPlayerMove();
+        Card playedCard = findPlayedCard(state, String.valueOf(payload));
+        
+        return state
+            .transformPlayer(player.getId(), p -> p.withCurrentHand(removeCardFromPlayerHand(state, playedCard)))
+            .withCurrentTable(addCardToTable(state, playedCard))
+            .withAllCombinations(this.combinationsService.getCombinations(playedCard, new ArrayList<>(state.getCurrentTable())));
     }
 
     private GameState handlePickCombination(GameState state, Object payload) {
-        GameState result = state;
-
-        List<Player> players = state.getPlayersList();
         Player currentPlayer = state.getCurrentPlayerMove();
-        int combinationsSize = state.getAllCombinations().size();
-        List<Card> pickedCombination = findPickedCombination(result, String.valueOf(payload));
-        List<Card> updatedCurrentTable = new ArrayList<>();
+        List<Card> pickedCombination = findPickedCombination(state, payload);
 
-        List<Player> updatedPlayers = new ArrayList<>();
+        
+        // no combinatinos can be won or player chose to not pick any winning combos  => move to next phase
+        if(state.getAllCombinations().isEmpty() || pickedCombination.isEmpty()) {
+            return state
+                .transformPlayer(currentPlayer.getId(), p -> p.withLastCardsWon(List.of()))
+                .withAllCombinations(List.of());
+        } 
+        // pick a correct combination that player chose and remove those cards from table and add them to player's won cards or just play card and move to next phase
+        // if player win all cards from table, he gets one 'table point' which adds one total points
 
-        for(Player player: players) {
-            if(player.getId().equals(currentPlayer.getId())) {
-                // no combinatinos can be won or player chose to not pick any winning combos  => move to next phase
-                if(combinationsSize == 0 || pickedCombination.size() == 0) {
-                    updatedPlayers.add(currentPlayer.withLastCardsWon(new ArrayList<>()));
+        // update the current table
+        List<Card> updatedCurrentTable = removeWonCardsFromTable(pickedCombination, new ArrayList<>(state.getCurrentTable()));
+        // check if player won all cards from table
+        boolean tablePoint = checkTablePoint(updatedCurrentTable);
 
-                    result = result
-                    .withPlayers(updatedPlayers)
-                    .withAllCombinations(new ArrayList<>());
-                    return result;
-                    // player.clearLastWonCards();
-                } else {
-                    // pick a correct combination that player chose and remove those cards from table and add them to player's won cards or just play card and move to next phase
-                    // if player win all cards from table he gets one 'table point' which adds one total points
-                    // List<Card> pickedCombinations = findPickedCombination(state, String.valueOf(payload));
-                    int newPoints = pointsFromCombo(pickedCombination);
-                    List<Card> totalCardsWon = new ArrayList<>(currentPlayer.getCardsWon());
-                    totalCardsWon.addAll(pickedCombination);
-
-                    // update the player
-                    currentPlayer = currentPlayer
-                    .withLastCardsWon(new ArrayList<>(pickedCombination))
-                    .withCardsWon(new ArrayList<>(totalCardsWon))
-                    .withPoints(newPoints);
-
-                    // update the current table
-                    updatedCurrentTable = removeWonCardsFromTable(pickedCombination, new ArrayList<>(state.getCurrentTable()));
-                    // check if player won all cards from table
-                    boolean tablePoint = checkTablePoint(updatedCurrentTable);
-
-                    if(tablePoint) {
-                        currentPlayer = currentPlayer
-                        .withTablePoint(currentPlayer.getTablePoints() + 1)
-                        .withPoints(currentPlayer.getPointsWon() + 1);
-                        //player.addTablePoint();
-                        //addPointsToPlayer(player, 1);
-                        //gameState.setLastWinnerOfTablePoint(player);
-                        result = result.withLastWinnnerOfTablePoint(currentPlayer);  
-                    }
-                }
-            } else {
-                updatedPlayers.add(player);
-            }
-        }
-
-        result = result
-            .withPlayers(updatedPlayers)
+        // update state
+        return state
+            .transformPlayer(currentPlayer.getId(), p -> {
+                Player updated = p
+                    .withLastCardsWon(pickedCombination)
+                    .withCardsWon(combine(p.getCardsWon(), pickedCombination));
+                return tablePoint ? updated.withTablePoint(updated.getTablePoints() + 1) : updated;
+            })
+            .withIf(tablePoint, s -> s.withLastWinnnerOfTablePoint(currentPlayer.getId()))
             .withCurrentTable(updatedCurrentTable)
-            .withLastWinnerInRound(currentPlayer)
-            .withAllCombinations(new ArrayList<>());
-
-        return result;
+            .withLastWinnerInRound((currentPlayer.getId()))
+            .withAllCombinations(List.of());
+            
     }
 
-    private GamePhase handleResolveTurn() {
+    private GamePhase handleResolveTurn(GameState state) {
         // check for game over first
-        if(isGameOver()) {
+        if(isGameOver(state)) {
             return GamePhase.GAME_OVER;
         }
 
-        boolean playersCurrentHandsEmpty = checkPlayersCurrentHand();
-        boolean deckIsEmpty = checkPlayingDeckIsEmpty();
+        boolean playersCurrentHandsEmpty = checkPlayersCurrentHand(state);
+        boolean deckIsEmpty = checkPlayingDeckIsEmpty(state);
 
         if(playersCurrentHandsEmpty && deckIsEmpty) {
             return GamePhase.ROUND_END;
@@ -273,9 +296,9 @@ public class Game {
         return GamePhase.NEXT_TURN;
     }
 
-    private boolean isGameOver() {
-        for(Player player: gameState.getPlayers()) {
-            if(player.getPointsWon() >= gameState.getWinningScore()) {
+    private boolean isGameOver(GameState state) {
+        for(Player player: state.getPlayersList()) {
+            if(player.getPointsWon() >= state.getWinningScore()) {
                 return true;
             }
         }
@@ -283,86 +306,93 @@ public class Game {
         return false;
     }
 
-    private DealCardsToPlayersResult handleDealCards(CardDeck deck, List<Player> players) {
-
-        DealCardsToPlayersResult resultAfterFirst = dealCardsToPlayers(deck, players);
-        DealCardsToPlayersResult resultAfterSecond = dealCardsToPlayers(resultAfterFirst.deck(), resultAfterFirst.players());
-
-        return new DealCardsToPlayersResult(resultAfterSecond.deck(), resultAfterSecond.players());
+    private GameState handleNextTurn(GameState state) {
+        int currIndex = state.getPlayerMoveIndex();
+        return state
+            .withIf(currIndex == 0, s -> s.withPlayerMoveIndex(1))
+            .withIf(currIndex == 1, s -> s.withPlayerMoveIndex(0))
+            .withLastWinnerOfMoreCards(null)
+            .withLastWinnnerOfTablePoint(null);
     }
 
-    private void handleNextTurn() {
-        // on every new turn, swap who is playing
-        if(gameState.getPlayerMoveIndex() == 0) {
-            System.out.println("switching players: player 0 > player 1");
-            gameState.setPlayerMoveIndex(1);
-        } else {
-            System.out.println("switching players: player 1 > player 0");
-            gameState.setPlayerMoveIndex(0);
+    private GameState handleLastWinnerInRound(GameState state) {
+        // check if anyone won any cards in the whole round
+        if(state.getLastWinnerInRound() == null) {
+            return state;
         }
 
-        this.gameState.setLastWinnerOfMoreCards(null);
+        // no remaining cards left to award, set last winner in round to null
+        if(state.getCurrentTable().size() == 0) {
+            return state.withLastWinnerInRound(null);
+        }
+
+        // award remaining cards from table to last winner in round
+        Player lastWinnerOfCards = state.findPlayerById(state.getLastWinnerInRound());
+        return state
+            .transformPlayer(lastWinnerOfCards.getId(), p -> {
+                return p
+                    .withLastCardsWon(new ArrayList<>(state.getCurrentTable()))
+                    .withCardsWon(combine(p.getCardsWon(), state.getCurrentTable()));
+            });
+
     }
 
-    private void handleRoundEnd() {
-        gameState.incrementRoundsPlayed();
-        gameState.setRoundChanged(true);
-        // reset more cards winner and table point winner after every round
-        gameState.setLastWinnerOfMoreCards(null);
-        gameState.setLastWinnerOfTablePoint(null);
+    private GameState awardPoints(GameState state) {
+        // calculate points from cardsWon and roundTablePoints, check whoever won the more cards and add +3 to total points and update the lastWinnerOfMoreCards
+        Player p1 = state.findPlayerById(state.getPlayersList().get(0).getId());
+        Player p2 = state.findPlayerById(state.getPlayersList().get(1).getId());
 
-        if(gameState.getLastWinnerInRound() != null) {
-            // give last winner of round remaining cards, if any, from table
-            if(gameState.getCurrentTable().size() > 0) {
-                gameState.getLastWinnerInRound().clearLastWonCards();
-                gameState.getLastWinnerInRound().winCards(gameState.getCurrentTable());
-                addPointsToPlayer(gameState.getLastWinnerInRound());
-                removeWonCardsFromTable(gameState.getCurrentTable());
-            } else {
-                gameState.setLastWinnerInRound(null);
-            }
+        int p1Points = calculatePlayerPoints(p1.getCardsWon(), p1.getTablePoints());
+        int p2Points = calculatePlayerPoints(p2.getCardsWon(), p2.getTablePoints());
 
-        }
+        int p1Bonus = (p1.getCardsWonSize() > p2.getCardsWonSize()) ? 3 : 0;
+        int p2Bonus = (p2.getCardsWonSize() > p1.getCardsWonSize()) ? 3 : 0;
 
-        // check which player has more total cards taken, and award them 3 points
-        int player1CardsWon = gameState.getPlayers()[0].getCardsWonSize();
-        int player2CardsWon = gameState.getPlayers()[1].getCardsWonSize();
-        if(player1CardsWon > player2CardsWon) {
-            gameState.setLastWinnerOfMoreCards(gameState.getPlayers()[0]);
-            addPointsToPlayer(gameState.getPlayers()[0], 3);
-        } else if(player2CardsWon > player1CardsWon) {
-            gameState.setLastWinnerOfMoreCards(gameState.getPlayers()[1]);
-            addPointsToPlayer(gameState.getPlayers()[1], 3);
-        }
-        
+        return state
+            .transformPlayer(p1.getId(), p -> p.withPoints(p1Points + p1Bonus))
+            .transformPlayer(p2.getId(), p -> p.withPoints(p2Points + p2Bonus))
+            .withIf((p1Bonus > p2Bonus), s -> s.withLastWinnerOfMoreCards(p1.getId()))
+            .withIf((p2Bonus > p1Bonus), s-> s.withLastWinnerOfMoreCards(p2.getId()));
     }
 
-    private void handleRoundStart() {
-        // collect cards to the deck
-        List<Card> playerCards = gameState.getPlayers()[0].getCardsWon();
-        List<Card> cpuCards = gameState.getPlayers()[1].getCardsWon();
-        gameState.getDeck().getDeck().addAll(playerCards);
-        gameState.getDeck().getDeck().addAll(cpuCards);
-        // reset player cards won
-        gameState.getPlayers()[0].clearWonCards();
-        gameState.getPlayers()[1].clearWonCards();
-        // shuffle the deck
-        gameState.getDeck().shuffleDeck();
-        // deal cards to table
-        this.dealCardsToTable();
-        // on every new round, swap who should play first
-        if(gameState.getRoundsPlayed() % 2 == 0) {
-            gameState.setPlayerMoveIndex(0);
-        } else {
-            gameState.setPlayerMoveIndex(1);
-        }
+    private GameState handleRoundEnd(GameState state) {
+        return state
+            .withRoundsPlayed(state.getRoundsPlayed() + 1)
+            .withRoundChanged(true)
+            .withLastWinnerOfMoreCards(null)
+            .withLastWinnnerOfTablePoint(null)
+            .transform(this::handleLastWinnerInRound)
+            .transform(this::awardPoints)
+            .withCurrentTable(List.of());
+    }
 
-        gameState.setRoundChanged(false);
-       
+    private GameState handleRoundStart(GameState state) {
+        // reset cards won, table points, last winner of more cards, last winner of table point, last winner in round
+        // generate and shuffle the deck
+        // deal cards to players and table
+        // swap player turn(player who played last in the last round, plays first in the next round)
+
+        Player p1 = state.getPlayersList().get(0);
+        Player p2 = state.getPlayersList().get(1);
+
+        int roundsPlayed = state.getRoundsPlayed();
+        int currIndex = state.getPlayerMoveIndex();
+
+        return state
+            .transformPlayer(p1.getId(), p -> p.withCardsWon(List.of()).withTablePoint(0))
+            .transformPlayer(p2.getId(), p -> p.withCardsWon(List.of()).withTablePoint(0))
+            .transformCardDeck(d -> CardDeck.initial().shuffled())
+            .transform(this::handleNewDealCards)
+            .withLastWinnerOfMoreCards(null)
+            .withLastWinnnerOfTablePoint(null)
+            .withLastWinnerInRound(null)
+            .withIf(currIndex == 0, s -> s.withPlayerMoveIndex(0))
+            .withIf(currIndex == 1, s -> s.withPlayerMoveIndex(1))
+            .withRoundChanged(false);
     }
 
     private void handleGameOver() {
-        for(Player player: gameState.getPlayers()) {
+        for(Player player: gameState.getPlayersList()) {
             if(player.getPointsWon() >= gameState.getWinningScore()) {
                 gameState.setGameOverPlayers("winner", player);
             } else {
@@ -391,50 +421,6 @@ public class Game {
         gameState.getDeck().resetDeck();
 
 
-    }
-
-    private DealCardsToPlayersResult dealCardsToPlayers(CardDeck deck, List<Player> playersList) { //Player[] players) {
-        List<Card> deckList = new ArrayList<>(deck.getDeck());
-        // Player[] playersWithAddedCards = new Player[players.length];
-        List<Player> playersListWithAddedCards = new ArrayList<>();
-
-        int cursor = 0; // where we are in the deck
-        int cardsPerPlayer = 3;
-
-        for(Player currentPlayer: playersList) {
-            // extract cards to deal
-            List<Card> cardsToDeal = new ArrayList<>(deckList.subList(cursor, cardsPerPlayer + cursor));
-            // update player
-            playersListWithAddedCards.add(currentPlayer.withAddedCards(cardsToDeal));
-
-            cursor+= cardsPerPlayer;
-        }
-        CardDeck deckWithRemovedCards = deck.withRemovedCards(cursor);
-
-        return new DealCardsToPlayersResult(deckWithRemovedCards, playersListWithAddedCards);
-    }
-
-    private DealCardsToTableResult dealCardsToTable(CardDeck deck, List<Card> currentTable) {
-        List<Card> deckList = new ArrayList<>(deck.getDeck());
-        List<Card> currentTableWithAddedCards = new ArrayList<>(currentTable);
-
-        // deal cards to table
-        int cardsToDeal = 4;
-        for(int i = 0; i < cardsToDeal; i++) {
-            currentTableWithAddedCards.add(deckList.get(i));
-        }
-        CardDeck deckWithRemovedCards = deck.withRemovedCards(cardsToDeal);
-
-        return new DealCardsToTableResult(deckWithRemovedCards, currentTableWithAddedCards);
-
-
-
-        // force ACE into table
-        // this.currentTable.add(this.deck.dealCard("10"));
-        // this.currentTable.add(this.deck.dealCard("Q"));
-        // this.currentTable.add(this.deck.dealCard("Q"));
-        // this.currentTable.add(this.deck.dealCard("3"));
-        // this.currentTable.add(this.deck.dealCard("3"));
     }
 
     private void playCardToTable(Card card) {
@@ -470,30 +456,22 @@ public class Game {
         return currentTable.isEmpty();
     }
 
-    private List<Card> removeWonCardsFromTable(List<Card> wonCards, List<Card> currentTable) {
-        Iterator<Card> tableIterator = currentTable.iterator();
-        Iterator<Card> wonCardsIterator = wonCards.iterator();
-        while(tableIterator.hasNext()) {
-            Card next = tableIterator.next();
-            while(wonCardsIterator.hasNext()) {
-                Card nextWon = wonCardsIterator.next();
-                if(next.equals(nextWon)) {
-                    tableIterator.remove();
-                }
-            }
-        }
+    // calculates points from all cards won + table points in one round
+    private int calculatePlayerPoints(List<Card> cardsWon, int tablePoints) {
+        int points = cardsWon.stream()
+            .map(c -> c.getPoints())
+            .reduce(tablePoints, (a, b) -> {
+                return a + b;
+            });
+            
+        return points;
+    }
 
-        return new ArrayList<>(currentTable);
-        // List<Card> currentTableCopy = new ArrayList<>(gameState.getCurrentTable());
-        // for(int i = 0; i < currentTableCopy.size(); i++) {
-        //     Card currentCard = currentTableCopy.get(i);
-        //     for(int j = 0; j < wonCards.size(); j++) {
-        //         if(wonCards.get(j).equals(currentCard)) {
-        //             gameState.getCurrentTable().remove(currentCard);
-        //             // System.out.println("Removed from table: " + wonCards.get(j));
-        //         }
-        //     }
-        // }
+    private List<Card> removeWonCardsFromTable(List<Card> wonCards, List<Card> currentTable) {
+        currentTable.removeAll(wonCards);
+
+        Card[] currentTableArray = currentTable.toArray(new Card[0]);
+        return List.of(currentTableArray);
     }
 
     private Card findPlayedCard(GameState state, String playedCardIndex) {
@@ -504,8 +482,8 @@ public class Game {
         return playerHand.get(index);
     }
 
-    private boolean checkPlayersCurrentHand() {
-        Player[] players = gameState.getPlayers();
+    private boolean checkPlayersCurrentHand(GameState state) {
+        List<Player> players = state.getPlayersList();
 
         boolean bothCurrentHands = true;
 
@@ -518,19 +496,25 @@ public class Game {
         return bothCurrentHands;
     }
 
-    private boolean checkPlayingDeckIsEmpty() {
-        if(gameState.getDeck().getDeck().size() == 0) {
+    private boolean checkPlayingDeckIsEmpty(GameState state) {
+        if(state.getCardDeck().getDeck().size() == 0) {
             return true;
         }
 
         return false;
     }
 
-    private List<Card> findPickedCombination(GameState state, String allCombinationsInputIndex) {
+    private List<Card> findPickedCombination(GameState state, Object payload) {
+        // check for null first
+        if(payload == null) {
+            return new ArrayList<>();
+        }
+
+        String allCombinationsInputIndex = String.valueOf(payload);
         int inputIndex = Integer.valueOf(allCombinationsInputIndex);
 
         // return empty list if player choose to play card only
-        if(inputIndex == -1) {
+        if(inputIndex == -1 ) {
             return new ArrayList<>();
         }
 

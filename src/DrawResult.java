@@ -1,1 +1,0 @@
-public record DrawResult(Card card, CardDeck deck) {};

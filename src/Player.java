@@ -39,6 +39,20 @@ public class Player {
         );
     }
 
+    public Player withCurrentHand(List<Card> updatedCurrentHand) {
+        return new Player(
+            this.id,
+            this.name,
+            this.cardsWon,
+            this.lastCardsWon,
+            updatedCurrentHand,
+            this.pointsWon,
+            this.tablePoints
+        );
+    }
+
+    
+
     public Player withRemovedCard(Card card) {
         List<Card> updatedCurrentHand = new ArrayList<>(this.currentHand);
         updatedCurrentHand.remove(card);
@@ -208,8 +222,9 @@ public class Player {
         return newState;
     }
 
-    public void actionPickCombination(Game game, Object payload) {
-        game.updateGame(new GameInput(this.id, GameAction.PICK_COMBINATION, payload));
+    public GameState actionPickCombination(Game game, Object payload) {
+        GameState newState = game.updateGame(new GameInput(this.id, GameAction.PICK_COMBINATION, payload));
+        return newState;
     }
 
     // AUTOMATIC ACTIONS

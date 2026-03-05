@@ -22,18 +22,14 @@ public class CardDeck {
         return new CardDeck(withRemovedCards);
     }
 
-    public DrawResult drawCard() {
-        Card card = deck.get(0);
-
-        List<Card> withRemovedCard = new ArrayList<>(deck.subList(1, deck.size()));
-
-        return new DrawResult(card, new CardDeck(withRemovedCard));
+    public CardDeck withDeck(List<Card> updatedDeck) {
+        return new CardDeck(updatedDeck);
     }
 
     private static List<Card> createDeck() {
         List<Card> newDeck = new ArrayList<>();
         // create cards from 2 - K symbols for all suits
-        for(int i = 0; i < SUITS.length - 2; i++) {
+        for(int i = 0; i < SUITS.length - 3; i++) {
             // cards 2-9 give 0 points, exception is 2 club which awards one point, rest 10-K are one point with exception of 10 diamond which is two points
             for(int j = 0; j < SYMBOLS.length; j++) {
                 if(j < 8) {
