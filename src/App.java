@@ -7,7 +7,6 @@ public class App {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
 
-
         Player humanPlayer =  Player.initial("p1", "player1");
         Player humanPlayer2 = Player.initial("p2", "player2");
         PlayerCpu cpu = PlayerCpu.initial("p3","cpu1");

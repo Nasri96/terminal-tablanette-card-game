@@ -129,10 +129,6 @@ public class TerminalUI {
             }
 
             if(gamePhase == GamePhase.GAME_OVER) {
-                // checks if game was over after the ROUND_END state
-                if(gameState.getRoundChanged()) {
-                    printLastWinnerInRound(gameState);
-                }
                 wait(500);
                 System.out.println("--- GAME_OVER ---");
                 wait(500);
@@ -140,6 +136,7 @@ public class TerminalUI {
             }
 
             if(gamePhase == GamePhase.GAME_END) {
+                printLastWinnerInRound(gameState);
                 wait(500);
                 System.out.println("--- GAME_END ---");
                 wait(500);
@@ -257,10 +254,8 @@ public class TerminalUI {
     }
 
     public void printGameEnd(GameState gameState) {
-        Player winner = gameState.getGameOverPlayers().get("winner");
-        Player loser = gameState.getGameOverPlayers().get("loser");
-        System.out.println("Winner: " + winner.getName() + ", points won: " + winner.getPointsWon() + ", cards won: " + winner.getCardsWon());
-        System.out.println("Loser: " + loser.getName() + ", points won: " + loser.getPointsWon() + ", cards won: " + loser.getCardsWon());
+        MatchDetails lastMatch = MatchDetailsManager.getLastMatch();
+        System.out.println(lastMatch);
     }
 
     public void printMainMenu() {

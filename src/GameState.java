@@ -15,7 +15,6 @@ public class GameState {
     private String lastWinnerInRound;
     private String lastWinnerOfMoreCards;
     private String lastWinnerOfTablePoint;
-    private Map<String, Player> gameOverPlayers;
     private List<Player> playersList;
     private List<Card> currentTable;
     private List<List<Card>> allCombinations;
@@ -32,7 +31,6 @@ public class GameState {
         String lastWinnerInRound,
         String lastWinnerOfMoreCards,
         String lastWinnerOfTablePoint,
-        Map<String, Player> gameOverPlayers,
         List<Card> currentTable,
         List<List<Card>> allCombinations,
         GamePhase gamePhase
@@ -46,7 +44,6 @@ public class GameState {
         this.lastWinnerInRound = lastWinnerInRound;
         this.lastWinnerOfMoreCards = lastWinnerOfMoreCards;
         this.lastWinnerOfTablePoint = lastWinnerOfTablePoint;
-        this.gameOverPlayers = Map.copyOf(gameOverPlayers);
         this.currentTable = List.copyOf(currentTable);
         this.allCombinations = List.copyOf(allCombinations);
         this.gamePhase = gamePhase;
@@ -55,9 +52,9 @@ public class GameState {
     public static GameState initial(List<Player> playerList) {
         return new GameState(
             CardDeck.initial(), playerList, 0, 0, 
-            false, 10, null, 
+            false, 5, null, 
             null, null, 
-            new HashMap<>(), new ArrayList<>(), new ArrayList<>(), GamePhase.GAME_SETUP);
+            new ArrayList<>(), new ArrayList<>(), GamePhase.GAME_SETUP);
     }
 
     public GameState withDeck(CardDeck updatedDeck) {
@@ -71,7 +68,6 @@ public class GameState {
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
             this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -81,16 +77,15 @@ public class GameState {
         return new GameState(
             this.cardDeck, 
             updatedListPlayers,
-            this.playerMoveIndex, 
-            this.roundsPlayed, 
-            this.roundChanged, 
-            this.winningScore, 
-            this.lastWinnerInRound, 
-            this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
-            this.currentTable, 
-            this.allCombinations, 
+            this.playerMoveIndex,
+            this.roundsPlayed,
+            this.roundChanged,
+            this.winningScore,
+            this.lastWinnerInRound,
+            this.lastWinnerOfMoreCards,
+            this.lastWinnerOfTablePoint,
+            this.currentTable,
+            this.allCombinations,
             this.gamePhase);
     }
 
@@ -104,8 +99,7 @@ public class GameState {
             this.winningScore, 
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
+            this.lastWinnerOfTablePoint,
             this.currentTable, 
             this.allCombinations, 
             nextPhase);
@@ -121,8 +115,7 @@ public class GameState {
             this.winningScore, 
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
+            this.lastWinnerOfTablePoint,
             updatedCurrentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -139,7 +132,6 @@ public class GameState {
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
             this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
             this.currentTable, 
             allCombinations, 
             this.gamePhase);
@@ -156,7 +148,6 @@ public class GameState {
             lastWinner, 
             this.lastWinnerOfMoreCards, 
             this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -173,7 +164,6 @@ public class GameState {
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
             lastWinner, 
-            this.gameOverPlayers, 
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -189,8 +179,7 @@ public class GameState {
             this.winningScore, 
             this.lastWinnerInRound, 
             lastWinner, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
+            this.lastWinnerOfTablePoint,
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -207,7 +196,6 @@ public class GameState {
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
             this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -223,8 +211,7 @@ public class GameState {
             this.winningScore, 
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
+            this.lastWinnerOfTablePoint,
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -240,8 +227,7 @@ public class GameState {
             this.winningScore, 
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
+            this.lastWinnerOfTablePoint,
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -273,8 +259,7 @@ public class GameState {
             this.winningScore, 
             this.lastWinnerInRound, 
             this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.gameOverPlayers, 
+            this.lastWinnerOfTablePoint,
             this.currentTable, 
             this.allCombinations, 
             this.gamePhase);
@@ -408,8 +393,7 @@ public class GameState {
                 winningScore: %d,
                 lastWinnerInRound id: %s
                 lastWinnerOfMoreCards id: %s
-                lastWinnerOfTablePoint id: %s
-                gameOverPlayers: %s,
+                lastWinnerOfTablePoint id: %s,
                 player list index0: {
                     %s
                 },
@@ -420,7 +404,7 @@ public class GameState {
                 allCombinations: %s
                 gamePhase: %s
                 """.formatted(cardDeck, playerMoveIndex, roundsPlayed, roundChanged, winningScore, lastWinnerInRound, 
-                    lastWinnerOfMoreCards, lastWinnerOfTablePoint, gameOverPlayers, playersList.get(0), playersList.get(1), currentTable, allCombinations, gamePhase);
+                    lastWinnerOfMoreCards, lastWinnerOfTablePoint, playersList.get(0), playersList.get(1), currentTable, allCombinations, gamePhase);
         
         return output;
     }

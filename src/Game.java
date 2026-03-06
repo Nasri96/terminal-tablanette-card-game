@@ -87,8 +87,8 @@ public class Game {
                 if(input.action == GameAction.CONTINUE) {
                     state = handleRoundEnd(state);
                     return this.gameState = state
-                        .withGamePhase(GamePhase.ROUND_START);
-                    // game over possible also possible after round end
+                        .withGamePhase(isGameOver(state) ? GamePhase.GAME_OVER : GamePhase.ROUND_START);
+                    // game over check
                     // if(this.isGameOver(state)) {
                     //     this.gameState.setGamePhase(GamePhase.GAME_OVER);
                     //     return state;
@@ -121,27 +121,27 @@ public class Game {
 
             case DEAL_CARDS:
                 if(input.action == GameAction.CONTINUE) {
-                    // handleDealCards();
                     state = handleNewDealCards(state);
                     this.gameState = state
                         .withGamePhase(GamePhase.TURN_PLAY_CARD);
-                    System.out.println(this.gameState);
                 }
 
                 return state;
             
             case GAME_OVER:
                 if(input.action == GameAction.CONTINUE) {
-                    handleGameOver();
-                    this.gameState.setGamePhase(GamePhase.GAME_END);
+                    state = handleGameOver(state);
+                    this.gameState = state
+                        .withGamePhase(GamePhase.GAME_END);
                 }
                 
                 return state;
             
             case GAME_END:
                 if(input.action == GameAction.CONTINUE) {
-                    handleGameEnd();
-                    this.gameState.setGamePhase(GamePhase.GAME_SETUP);
+                    state = handleGameEnd(state);
+                    return this.gameState = state
+                        .withGamePhase(GamePhase.GAME_SETUP);
                 }
 
                 return state;
@@ -187,17 +187,17 @@ public class Game {
         System.out.println(orderIds);
 
         
-        List<Card> round1Receiver = deck.subList(0, 1);
-        List<Card> round1Dealer = deck.subList(1, 2);
-        List<Card> round2Receiver = deck.subList(2, 3);
-        List<Card> round2Dealer = deck.subList(3, 4);
+        List<Card> round1Receiver = List.copyOf(deck.subList(0, 1));
+        List<Card> round1Dealer = List.copyOf(deck.subList(1, 2));
+        List<Card> round2Receiver = List.copyOf(deck.subList(2, 3));
+        List<Card> round2Dealer = List.copyOf(deck.subList(3, 4));
         // if game phase is setup or start, deal cards to table also
-        List<Card> dealtTableCards = (phase == GamePhase.GAME_SETUP || phase == GamePhase.ROUND_START) ? deck.subList(4, 5) : List.of();
+        List<Card> dealtTableCards = (phase == GamePhase.GAME_SETUP || phase == GamePhase.ROUND_START) ? List.copyOf(deck.subList(4, 5)) : List.of();
         long countDealtCards = Stream.of(round1Receiver, round1Dealer, round2Receiver, round2Dealer, dealtTableCards)
             .flatMap(Collection::stream)
             .count();
         System.out.println("deck before update: " + deck);
-        List<Card> remaining = deck.subList((int) countDealtCards, deck.size());
+        List<Card> remaining = List.copyOf(deck.subList((int) countDealtCards, deck.size()));
         System.out.println("deck after update: " + remaining);
 
         String firstReceiverId = orderIds.get(0);
@@ -342,8 +342,8 @@ public class Game {
         Player p1 = state.findPlayerById(state.getPlayersList().get(0).getId());
         Player p2 = state.findPlayerById(state.getPlayersList().get(1).getId());
 
-        int p1Points = calculatePlayerPoints(p1.getCardsWon(), p1.getTablePoints());
-        int p2Points = calculatePlayerPoints(p2.getCardsWon(), p2.getTablePoints());
+        int p1Points = calculatePlayerPoints(p1.getCardsWon(), p1.getTablePoints()) + p1.getPointsWon();
+        int p2Points = calculatePlayerPoints(p2.getCardsWon(), p2.getTablePoints()) + p2.getPointsWon();
 
         int p1Bonus = (p1.getCardsWonSize() > p2.getCardsWonSize()) ? 3 : 0;
         int p2Bonus = (p2.getCardsWonSize() > p1.getCardsWonSize()) ? 3 : 0;
@@ -391,36 +391,20 @@ public class Game {
             .withRoundChanged(false);
     }
 
-    private void handleGameOver() {
-        for(Player player: gameState.getPlayersList()) {
-            if(player.getPointsWon() >= gameState.getWinningScore()) {
-                gameState.setGameOverPlayers("winner", player);
-            } else {
-                gameState.setGameOverPlayers("loser", player);
-            }
-        }
+    private GameState handleGameOver(GameState state) {
+        Player p1 = state.getPlayersList().get(0);
+        Player p2 = state.getPlayersList().get(1);
+        MatchDetails matchDetails = new MatchDetails(p1.getName(), p2.getName() , p1.getPointsWon(), p2.getPointsWon());
+        MatchDetailsManager.addMatch(matchDetails);
+
+        return state;
     }
 
-    private void handleGameEnd() {
-        // reset game
-        gameState.setPlayerMoveIndex(0);
-        gameState.setRoundsPlayed(0);
-        gameState.setRoundChanged(false);
-        gameState.setLastWinnerInRound(null);
-        gameState.setLastWinnerOfMoreCards(null);
-        gameState.setLastWinnerOfTablePoint(null);
-        gameState.getGameOverPlayers().clear();
-        gameState.setAllCombinations(null);
+    private GameState handleGameEnd(GameState state) {
+        Player player =  Player.initial("p1", "player1");
+        Player player2 = Player.initial("p2", "player2");
 
-        // reset players
-        for(Player player: gameState.getPlayers()) {
-            player.reset();
-        }
-
-        // reset deck
-        gameState.getDeck().resetDeck();
-
-
+        return GameState.initial(List.of(player, player2));
     }
 
     private void playCardToTable(Card card) {
