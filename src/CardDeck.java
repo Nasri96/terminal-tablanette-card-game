@@ -35,7 +35,7 @@ public class CardDeck {
                 if(j < 8) {
                     // check for 2 club card, this one awards one point
                     if(SYMBOLS[j] == "2" && SUITS[i] == 'c') {
-                        Card card = new Card(SUITS[i], SYMBOLS[j], Integer.valueOf(j + 2), 1);
+                        Card card = new Card(SUITS[i], SYMBOLS[j], Integer.valueOf(j + 2), 0);
                         newDeck.add(card);
                     } else {
                         Card card = new Card(SUITS[i], SYMBOLS[j], Integer.valueOf(j + 2), 0);

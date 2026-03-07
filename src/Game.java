@@ -87,6 +87,7 @@ public class Game {
                 if(input.action == GameAction.CONTINUE) {
                     state = handleRoundEnd(state);
                     return this.gameState = state
+                        //.withGamePhase(GamePhase.ROUND_START);
                         .withGamePhase(isGameOver(state) ? GamePhase.GAME_OVER : GamePhase.ROUND_START);
                     // game over check
                     // if(this.isGameOver(state)) {
@@ -199,6 +200,8 @@ public class Game {
         System.out.println("deck before update: " + deck);
         List<Card> remaining = List.copyOf(deck.subList((int) countDealtCards, deck.size()));
         System.out.println("deck after update: " + remaining);
+        System.out.println("receiver hand: " + round1Receiver + round2Receiver);
+        System.out.println("dealer hand: " + round1Dealer + round2Dealer);
 
         String firstReceiverId = orderIds.get(0);
         String dealerId = orderIds.get(1);
@@ -262,18 +265,18 @@ public class Game {
 
         // update the current table
         List<Card> updatedCurrentTable = removeWonCardsFromTable(pickedCombination, new ArrayList<>(state.getCurrentTable()));
-        // check if player won all cards from table
+        // table point check
         boolean tablePoint = checkTablePoint(updatedCurrentTable);
+        boolean overtime = state.getOvertime();
 
-        // update state
         return state
             .transformPlayer(currentPlayer.getId(), p -> {
                 Player updated = p
                     .withLastCardsWon(pickedCombination)
                     .withCardsWon(combine(p.getCardsWon(), pickedCombination));
-                return tablePoint ? updated.withTablePoint(updated.getTablePoints() + 1) : updated;
+                return (tablePoint && !overtime) ? updated.withTablePoint(updated.getTablePoints() + 1) : updated;
             })
-            .withIf(tablePoint, s -> s.withLastWinnnerOfTablePoint(currentPlayer.getId()))
+            .withIf((tablePoint && !overtime), s -> s.withLastWinnnerOfTablePoint(currentPlayer.getId()))
             .withCurrentTable(updatedCurrentTable)
             .withLastWinnerInRound((currentPlayer.getId()))
             .withAllCombinations(List.of());
@@ -281,11 +284,6 @@ public class Game {
     }
 
     private GamePhase handleResolveTurn(GameState state) {
-        // check for game over first
-        if(isGameOver(state)) {
-            return GamePhase.GAME_OVER;
-        }
-
         boolean playersCurrentHandsEmpty = checkPlayersCurrentHand(state);
         boolean deckIsEmpty = checkPlayingDeckIsEmpty(state);
 
@@ -296,9 +294,38 @@ public class Game {
         return GamePhase.NEXT_TURN;
     }
 
+    private boolean isOvertime(GameState state) {
+        // if both players have the same winning score at the end of the game, game goes to overtime
+        int p1Score = state.getPlayersList().get(0).getPointsWon();
+        int p2Score = state.getPlayersList().get(1).getPointsWon();
+        int winningScore = state.getWinningScore();
+
+        if((p1Score >= winningScore && p2Score >= winningScore) && p1Score == p2Score) {
+            System.out.println("IT IS OVERTIME!");
+            return true;
+        }
+
+        System.out.println("IT IS NOT OVERTIME!");
+        return false;
+    }
+
     private boolean isGameOver(GameState state) {
-        for(Player player: state.getPlayersList()) {
-            if(player.getPointsWon() >= state.getWinningScore()) {
+        boolean overtime = state.getOvertime();
+        List<Player> players = state.getPlayersList();
+        int winningScore = state.getWinningScore();
+
+        if(overtime) {
+            int p1Score = players.get(0).getPointsWon();
+            int p2Score = players.get(1).getPointsWon();
+
+            if(p1Score > p2Score || p2Score > p1Score) return true;
+
+            return false;
+        }
+
+        // no overtime
+        for(Player player: players) {
+            if(player.getPointsWon() >= winningScore) {
                 return true;
             }
         }
@@ -363,6 +390,7 @@ public class Game {
             .withLastWinnnerOfTablePoint(null)
             .transform(this::handleLastWinnerInRound)
             .transform(this::awardPoints)
+            .transform(this::handleOvertimeCheck)
             .withCurrentTable(List.of());
     }
 
@@ -389,6 +417,18 @@ public class Game {
             .withIf(currIndex == 0, s -> s.withPlayerMoveIndex(0))
             .withIf(currIndex == 1, s -> s.withPlayerMoveIndex(1))
             .withRoundChanged(false);
+    }
+
+    private GameState handleOvertimeCheck(GameState state) {
+        // if it was overtime from previous round, just return state
+        boolean wasOvertime = state.getOvertime();
+
+        if(wasOvertime) return state;
+
+        boolean isOvertime = isOvertime(state);
+
+        return state
+            .withIf(isOvertime, s -> s.withOvertime(true));
     }
 
     private GameState handleGameOver(GameState state) {
