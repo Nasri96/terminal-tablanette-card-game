@@ -1,9 +1,5 @@
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public class GameState {
@@ -58,23 +54,6 @@ public class GameState {
             false, 8, false, null, 
             null, null, 
             new ArrayList<>(), new ArrayList<>(), GamePhase.GAME_SETUP);
-    }
-
-    public GameState withDeck(CardDeck updatedDeck) {
-        return new GameState(
-            updatedDeck, 
-            this.playersList,
-            this.playerMoveIndex, 
-            this.roundsPlayed, 
-            this.roundChanged, 
-            this.winningScore, 
-            this.overtime,
-            this.lastWinnerInRound, 
-            this.lastWinnerOfMoreCards, 
-            this.lastWinnerOfTablePoint, 
-            this.currentTable, 
-            this.allCombinations, 
-            this.gamePhase);
     }
 
     public GameState withPlayers(List<Player> updatedListPlayers) {
@@ -326,10 +305,6 @@ public class GameState {
         return this.playerMoveIndex;
     }
 
-    public void setPlayerMoveIndex(int newIndex) {
-        this.playerMoveIndex = newIndex;
-    }
-
     public Player getCurrentPlayerMove() {
         return this.playersList.get(this.playerMoveIndex);
     }
@@ -340,10 +315,6 @@ public class GameState {
 
     public void incrementRoundsPlayed() {
         this.roundsPlayed++;
-    }
-
-    public void setRoundsPlayed(int val) {
-        this.roundsPlayed = val;
     }
 
     public int getWinningScore() {
@@ -358,10 +329,6 @@ public class GameState {
         return this.roundChanged;
     }
 
-    public void setRoundChanged(boolean changed) {
-        this.roundChanged = changed;
-    }
-
     public String getLastWinnerInRound() {
         return this.lastWinnerInRound;
     }
@@ -374,49 +341,16 @@ public class GameState {
         return this.lastWinnerOfTablePoint;
     }
 
-    public void setLastWinnerInRound(Player player) {
-        this.lastWinnerInRound = player;
-    }
-
-    public void setLastWinnerOfMoreCards(Player player) {
-        this.lastWinnerOfMoreCards = player;
-    }
-
-    public void setLastWinnerOfTablePoint(Player player) {
-        this.lastWinnerOfTablePoint = player;
-    }
-
-    public Map<String, Player> getGameOverPlayers() {
-        return this.gameOverPlayers;
-    }
-
-    public void setGameOverPlayers(String gameWinnerLoser, Player player) {
-        this.gameOverPlayers.put(gameWinnerLoser, player);
-    }
-
     public List<Card> getCurrentTable() {
         return this.currentTable;
-    }
-
-    public void setCurrentTable(Card card) {
-        this.currentTable = new ArrayList<>(this.currentTable);
-        this.currentTable.add(card);
     }
     
     public List<List<Card>> getAllCombinations() {
         return this.allCombinations;
     }
 
-    public void setAllCombinations(List<List<Card>> combinations) {
-        this.allCombinations = combinations;
-    }
-
     public GamePhase getGamePhase() {
         return this.gamePhase;
-    }
-
-    public void setGamePhase(GamePhase nextGamePhase) {
-        this.gamePhase = nextGamePhase;
     }
 
     public String toString() {

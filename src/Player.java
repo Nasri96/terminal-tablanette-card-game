@@ -24,39 +24,7 @@ public class Player {
         return new Player(id, name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0);
     }
 
-    public Player withAddedCards(List<Card> addedCards) {
-        List<Card> updatedCurrentHand = new ArrayList<>(this.currentHand);
-        updatedCurrentHand.addAll(addedCards);
-
-        return new Player(
-            this.id,
-            this.name,
-            this.cardsWon,
-            this.lastCardsWon,
-            updatedCurrentHand,
-            this.pointsWon,
-            this.tablePoints
-        );
-    }
-
     public Player withCurrentHand(List<Card> updatedCurrentHand) {
-        return new Player(
-            this.id,
-            this.name,
-            this.cardsWon,
-            this.lastCardsWon,
-            updatedCurrentHand,
-            this.pointsWon,
-            this.tablePoints
-        );
-    }
-
-    
-
-    public Player withRemovedCard(Card card) {
-        List<Card> updatedCurrentHand = new ArrayList<>(this.currentHand);
-        updatedCurrentHand.remove(card);
-
         return new Player(
             this.id,
             this.name,
@@ -132,24 +100,12 @@ public class Player {
         return this.cardsWon.size();
     }
 
-    public void clearWonCards() {
-        this.cardsWon.clear();
-    }
-
     public List<Card> getLastCardsWon() {
         return this.lastCardsWon;
     }
 
-    public void clearLastWonCards() {
-        this.lastCardsWon.clear();
-    }
-
     public List<Card> getCurrentHand() {
         return this.currentHand;
-    }
-
-    public void addCardToCurrentHand(Card card) {
-        this.currentHand.add(card);
     }
 
     public int getPointsWon() {
@@ -159,33 +115,7 @@ public class Player {
     public int getTablePoints() {
         return this.tablePoints;
     }
-
-    public void setPoints(int points) {
-        //this.pointsWon+= points;
-    }
-
-    public void addTablePoint() {
-        //this.tablePoints++;
-    }
-
-    public void playCard(Card card) {
-        this.currentHand.remove(card);
-    }
-
-    public void winCards(List<Card> wonCards) {
-        this.cardsWon.addAll(wonCards);
-
-        this.lastCardsWon.addAll(wonCards);
-    }
-
-    public void reset() {
-        // this.cardsWon = new ArrayList<>();
-        // this.lastCardsWon = new ArrayList<>();
-        // this.currentHand = new ArrayList<>();
-        // this.pointsWon = 0;
-        // this.tablePoints = 0;
-    }
-
+    
     public String toString() {
         String output = 
                 """

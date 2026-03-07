@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -87,15 +86,7 @@ public class Game {
                 if(input.action == GameAction.CONTINUE) {
                     state = handleRoundEnd(state);
                     return this.gameState = state
-                        //.withGamePhase(GamePhase.ROUND_START);
                         .withGamePhase(isGameOver(state) ? GamePhase.GAME_OVER : GamePhase.ROUND_START);
-                    // game over check
-                    // if(this.isGameOver(state)) {
-                    //     this.gameState.setGamePhase(GamePhase.GAME_OVER);
-                    //     return state;
-                    // }
-
-                    // this.gameState.setGamePhase(GamePhase.ROUND_START);
                 }
 
                 return state;
@@ -445,35 +436,6 @@ public class Game {
         Player player2 = Player.initial("p2", "player2");
 
         return GameState.initial(List.of(player, player2));
-    }
-
-    private void playCardToTable(Card card) {
-        this.gameState.setCurrentTable(card);
-    }
-
-    private int pointsFromCombo(List<Card> combo) {
-        int newPoints = 0;
-
-        for(Card card: combo) {
-            newPoints+= card.getPoints();
-        }
-
-        return newPoints;
-    }
-
-    private void addPointsToPlayer(Player player) {
-        int newPoints = 0;
-        List<Card> wonCards = player.getLastCardsWon();
-
-        for(Card card: wonCards) {
-            newPoints+= card.getPoints();
-        }
-
-        player.setPoints(newPoints);
-    }
-
-    private void addPointsToPlayer(Player player, int points) {
-        player.setPoints(points);
     }
 
     private boolean checkTablePoint(List<Card> currentTable) {

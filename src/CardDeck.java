@@ -16,14 +16,15 @@ public class CardDeck {
         return new CardDeck(createDeck());
     }
 
-    public CardDeck withRemovedCards(int numOfCards) {
-        List<Card> withRemovedCards = new ArrayList<>(deck.subList(numOfCards, deck.size()));
-
-        return new CardDeck(withRemovedCards);
-    }
-
     public CardDeck withDeck(List<Card> updatedDeck) {
         return new CardDeck(updatedDeck);
+    }
+
+    public CardDeck shuffled() {
+        List<Card> shuffled = new ArrayList<>(this.deck);
+        Collections.shuffle(shuffled);
+
+        return new CardDeck(shuffled);
     }
 
     private static List<Card> createDeck() {
@@ -56,32 +57,8 @@ public class CardDeck {
         return newDeck;
     }
 
-    public void resetDeck() {
-        // this.deck = createDeck();
-    }
-
     public List<Card> getDeck() {
         return this.deck;
-    }
-
-    public CardDeck shuffled() {
-        List<Card> shuffled = new ArrayList<>(this.deck);
-        Collections.shuffle(shuffled);
-
-        return new CardDeck(shuffled);
-    }
-
-
-    // force dealing card of given symbol
-    public Card dealCard(String symbol) {
-        for(Card card: this.deck) {
-            if(card.getSymbol().equals(symbol)) {
-                this.deck.remove(card);
-                return card;
-            }
-        }
-
-        return this.deck.remove(0);
     }
 
     public void printDeck() {
