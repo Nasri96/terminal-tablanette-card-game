@@ -451,13 +451,6 @@ public class Game {
         return state;
     }
 
-    private GameState handleGameEnd(GameState state) {
-        Player player =  Player.initial("p1", "player1");
-        Player player2 = Player.initial("p2", "player2");
-
-        return GameState.initial(List.of(player, player2));
-    }
-
     private boolean checkTablePoint(List<Card> currentTable) {
         return currentTable.isEmpty();
     }
