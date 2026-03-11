@@ -5,10 +5,12 @@ import java.util.List;
 public class TerminalUI {
     private Scanner scanner;
     protected Game game;
+    protected GameActionController actionController;
 
     public TerminalUI(Game game) {
         this.scanner = new Scanner(System.in);
         this.game = game;
+        this.actionController = new GameActionController(game);
     }
 
     public void start() {
@@ -21,7 +23,7 @@ public class TerminalUI {
 
             // if current player is cpu, process cpu inputs
             Player player = gameState.getCurrentPlayerMove();
-            if(player instanceof PlayerCpu) {
+            if(player.isCpu()) {
                 uiCpu.processCpuInputs();
                 continue;
             }
@@ -37,7 +39,8 @@ public class TerminalUI {
                 }
 
                 if(commandInput.equals("start")) {
-                    player.actionStart(this.game);
+                    this.actionController.dispatch(player.getId(), GameAction.START, null);
+                    // player.actionStart(this.game);
                 }
 
             }
@@ -50,7 +53,8 @@ public class TerminalUI {
                 String commandInput = this.scanner.nextLine();
                 String playedCardIndex = validatePlayedCardInput(commandInput, gameState);
                 if(!playedCardIndex.equals("invalid")) {
-                    player.actionPlayCard(this.game, playedCardIndex);
+                    this.actionController.dispatch(player.getId(), GameAction.PLAY_CARD, Integer.valueOf(playedCardIndex));
+                    // player.actionPlayCard(this.game, playedCardIndex);
                 } else {
                     continue;
                 }
@@ -65,7 +69,8 @@ public class TerminalUI {
                 if(gameState.getAllCombinations().size() == 0) {
                     System.out.println("You can't win any cards, press enter to continue:");
                     String commandInput = this.scanner.nextLine();
-                    player.actionPickCombination(this.game, null);
+                    this.actionController.dispatch(player.getId(), GameAction.PICK_COMBINATION, null);
+                    //player.actionPickCombination(this.game, null);
 
                 } else {
                     while(true) {
@@ -76,10 +81,12 @@ public class TerminalUI {
 
                             if(commandInput >= 1 && commandInput <= gameState.getAllCombinations().size()) {
                                 // select index and pick combination
-                                player.actionPickCombination(this.game, commandInput - 1);
+                                this.actionController.dispatch(player.getId(), GameAction.PICK_COMBINATION, commandInput - 1);
+                                //player.actionPickCombination(this.game, commandInput - 1);
                                 break;
                             } else if(commandInput == -1) {
-                                player.actionPickCombination(this.game, commandInput);
+                                this.actionController.dispatch(player.getId(), GameAction.PICK_COMBINATION, commandInput);
+                                // player.actionPickCombination(this.game, commandInput);
                                 break;
                             }
 
@@ -95,14 +102,16 @@ public class TerminalUI {
                 wait(500);
                 printPointsAwarded(gameState);
                 wait(1000);
-                player.actionResolveTurn(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionResolveTurn(game);
             }
 
             if(gamePhase == GamePhase.ROUND_END) {
                 wait(500);
                 System.out.println("======== ROUND_END ========");
                 wait(1000);
-                player.actionRoundEnd(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionRoundEnd(game);
             }
 
             if(gamePhase == GamePhase.ROUND_START) {
@@ -111,28 +120,32 @@ public class TerminalUI {
                 System.out.println("======== ROUND_START ========");
                 wait(1000);
                 System.out.println("--- SWITCHING PLAYERS ---");
-                player.actionRoundStart(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionRoundStart(game);
             }
 
             if(gamePhase == GamePhase.NEXT_TURN) {
                 wait(500);
                 System.out.println("--- NEXT_TURN ---");
                 wait(1000);
-                player.actionNextTurn(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionNextTurn(game);
             }
 
             if(gamePhase == GamePhase.DEAL_CARDS) {
                 wait(500);
                 System.out.println("--- DEAL_CARDS ---");
                 wait(1000);
-                player.actionDealCards(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionDealCards(game);
             }
 
             if(gamePhase == GamePhase.GAME_OVER) {
                 wait(500);
                 System.out.println("--- GAME_OVER ---");
                 wait(500);
-                player.actionGameOver(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionGameOver(game);
             }
 
             if(gamePhase == GamePhase.GAME_END) {
@@ -144,7 +157,8 @@ public class TerminalUI {
                 System.out.println("Type 'continue' to start new game");
                 System.out.print("> ");
                 validateTextInput("continue");
-                player.actionGameEnd(game);
+                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                // player.actionGameEnd(game);
             }
 
 
@@ -260,7 +274,7 @@ public class TerminalUI {
 
     public void printMainMenu() {
         System.out.println("---- Tablanette Game ----");
-        System.out.println(">> Start Game - type 'start'");
+        System.out.println(">> Play Game - type 'start'");
         System.out.println(">> Rules - type 'rules'");
         System.out.println(">> Quit - type 'quit'");
         System.out.println("Your command?");

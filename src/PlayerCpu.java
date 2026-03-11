@@ -3,12 +3,12 @@ import java.util.List;
 
 public class PlayerCpu extends Player {
     
-    public PlayerCpu(String id, String name, List<Card> cardsWon, List<Card> lastCardsWon, List<Card> currentHand, int pointsWon, int tablePointsWon) {
-        super(id, name, cardsWon, lastCardsWon, currentHand, pointsWon, tablePointsWon);
+    public PlayerCpu(String id, String name, List<Card> cardsWon, List<Card> lastCardsWon, List<Card> currentHand, int pointsWon, int tablePointsWon, boolean isCpu) {
+        super(id, name, cardsWon, lastCardsWon, currentHand, pointsWon, tablePointsWon, isCpu);
     }
 
-    public static PlayerCpu initial(String id, String name) {
-        return new PlayerCpu(id, name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0);
+    public static PlayerCpu initial(String id, String name, boolean isCpu) {
+        return new PlayerCpu(id, name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0, isCpu);
     }
 
 

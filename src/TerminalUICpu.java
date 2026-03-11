@@ -9,46 +9,49 @@ public class TerminalUICpu extends TerminalUI {
 
 
     public void processCpuInputs() {
-            GameState gameState = this.game.getGameState();
+            GameState state = this.game.getGameState();
             GamePhase gamePhase = this.game.getGamePhase();
-            Player cpu = gameState.getCurrentPlayerMove();
+            Player cpu = state.getCurrentPlayerMove();
 
             if(gamePhase == GamePhase.GAME_SETUP) {
-                cpu.actionStart(this.game);
+                this.actionController.dispatch(cpu.getId(), GameAction.START, null);
+                // cpu.actionStart(this.game);
             }
 
             if(gamePhase == GamePhase.TURN_PLAY_CARD) {
                 wait(500);
                 System.out.println("");
-                this.printTable(gameState);
+                this.printTable(state);
                 wait(500);
                 System.out.println("------------------------ TURN_PLAY_CARD");
                 wait(500);
                 System.out.println(cpu.getName() + " is playing card...");
                 wait(2000);
 
-                cpu.actionPlayCard(this.game, null);
+
+                // cpu.actionPlayCard(this.game, null);
             }
 
             if(gamePhase == GamePhase.TURN_PICK_COMBINATION) {
-                this.printTable(gameState);
+                this.printTable(state);
                 wait(500);
                 System.out.println("------------------------ TURN_PICK_COMBINATION");
                 wait(500);
-                List<Card> table = gameState.getCurrentTable();
+                List<Card> table = state.getCurrentTable();
                 System.out.println(cpu.getName() + " played card: " + table.get(table.size() - 1));
                 System.out.println(cpu.getName() + " is picking card combination...");
                 this.wait(2000);
 
-                cpu.actionPickCombination(this.game, null);
+                this.actionController.dispatch(cpu.getId(), GameAction.PLAY_CARD, payloadPlayCard(state));
+                //cpu.actionPickCombination(this.game, null);
             }
 
             if(gamePhase == GamePhase.TURN_RESOLVE) {
                 this.wait(500);
                 System.out.println("------------------------ TURN_RESOLVE");
-                this.printWonCards(gameState);
+                this.printWonCards(state);
                 wait(500);
-                this.printPointsAwarded(gameState);
+                this.printPointsAwarded(state);
                 this.wait(1000);
                 
                 cpu.actionResolveTurn(game);
@@ -63,7 +66,7 @@ public class TerminalUICpu extends TerminalUI {
             }
 
             if(gamePhase == GamePhase.ROUND_START) {
-                this.printLastWinnerInRound(gameState);
+                this.printLastWinnerInRound(state);
                 this.wait(500);
                 System.out.println("======== ROUND_START ========");
                 this.wait(1000);
@@ -90,8 +93,8 @@ public class TerminalUICpu extends TerminalUI {
 
             if(gamePhase == GamePhase.GAME_OVER) {
                 // checks if game was over after the ROUND_END state
-                if(gameState.getRoundChanged()) {
-                    printLastWinnerInRound(gameState);
+                if(state.getRoundChanged()) {
+                    printLastWinnerInRound(state);
                 }
                 wait(500);
                 System.out.println("--- GAME_OVER ---");
@@ -104,13 +107,25 @@ public class TerminalUICpu extends TerminalUI {
                 wait(500);
                 System.out.println("--- GAME_END ---");
                 wait(500);
-                printGameEnd(gameState);
+                printGameEnd(state);
                 wait(2000);
                 System.out.println("Ending the game...");
                 
                 cpu.actionGameEnd(game);
             }
 
+    }
+
+    private int payloadPlayCard(GameState state) {
+        Player cpu = state.getCurrentPlayerMove();
+        List<Card> cpuHand = cpu.getCurrentHand();
+        int max = cpuHand.size() - 1;
+        int min = 0;
+
+        int randomIndex = (int) (Math.random() * (max + 1));
+
+
+        return randomIndex;
     }
     
 }

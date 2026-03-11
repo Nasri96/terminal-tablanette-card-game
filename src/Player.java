@@ -9,8 +9,9 @@ public class Player {
     private final List<Card> currentHand;
     private final int pointsWon;
     private final int tablePoints;
+    private final boolean cpu;
 
-    public Player(String id, String name, List<Card> cardsWon, List<Card> lastCardsWon, List<Card> currentHand, int pointsWon, int tablePointsWon) {
+    public Player(String id, String name, List<Card> cardsWon, List<Card> lastCardsWon, List<Card> currentHand, int pointsWon, int tablePointsWon, boolean cpu) {
         this.id = id;
         this.name = name;
         this.cardsWon = List.copyOf(cardsWon);
@@ -18,10 +19,11 @@ public class Player {
         this.currentHand = List.copyOf(currentHand);
         this.pointsWon = pointsWon;
         this.tablePoints = tablePointsWon;
+        this.cpu = cpu;
     }
 
-    public static Player initial(String id, String name) {
-        return new Player(id, name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0);
+    public static Player initial(String id, String name, boolean isCpu) {
+        return new Player(id, name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), 0, 0, isCpu);
     }
 
     public Player withCurrentHand(List<Card> updatedCurrentHand) {
@@ -32,7 +34,8 @@ public class Player {
             this.lastCardsWon,
             updatedCurrentHand,
             this.pointsWon,
-            this.tablePoints
+            this.tablePoints,
+            this.cpu
         );
     }
 
@@ -44,7 +47,8 @@ public class Player {
             updatedLastCardsWon,
             this.currentHand,
             this.pointsWon,
-            this.tablePoints
+            this.tablePoints,
+            this.cpu
         );
     }
 
@@ -56,7 +60,8 @@ public class Player {
             this.lastCardsWon,
             this.currentHand,
             this.pointsWon,
-            this.tablePoints
+            this.tablePoints,
+            this.cpu
         );
     }
 
@@ -68,7 +73,8 @@ public class Player {
             this.lastCardsWon,
             this.currentHand,
             updatedPoints,
-            this.tablePoints
+            this.tablePoints,
+            this.cpu
         );
     }
 
@@ -80,7 +86,8 @@ public class Player {
             this.lastCardsWon,
             this.currentHand,
             this.pointsWon,
-            updatedTablePoints
+            updatedTablePoints,
+            this.cpu
         );
     }
 
@@ -115,6 +122,10 @@ public class Player {
     public int getTablePoints() {
         return this.tablePoints;
     }
+
+    public boolean isCpu() {
+        return this.cpu;
+    }
     
     public String toString() {
         String output = 
@@ -141,48 +152,4 @@ public class Player {
         System.out.println(this.name + " WON CARDS: " + lastCardsWon);
     }
 
-    // game actions by player
-    public GameState actionStart(Game game) {
-        GameState newState = game.updateGame(new GameInput(this.id, GameAction.START, null));
-        return newState;
-    }
-
-    public GameState actionPlayCard(Game game, Object payload) {
-        GameState newState = game.updateGame(new GameInput(this.id, GameAction.PLAY_CARD, payload));
-        return newState;
-    }
-
-    public GameState actionPickCombination(Game game, Object payload) {
-        GameState newState = game.updateGame(new GameInput(this.id, GameAction.PICK_COMBINATION, payload));
-        return newState;
-    }
-
-    // AUTOMATIC ACTIONS
-    public void actionResolveTurn(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
-
-    public void actionRoundEnd(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
-
-    public void actionRoundStart(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
-
-    public void actionNextTurn(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
-
-    public void actionDealCards(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
-
-    public void actionGameOver(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
-
-    public void actionGameEnd(Game game) {
-        game.updateGame(new GameInput(this.id, GameAction.CONTINUE, null));
-    }
 }

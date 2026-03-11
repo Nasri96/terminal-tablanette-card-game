@@ -1,10 +1,10 @@
-public class GameInput {
+public class GameInput<T> {
     public final String id;
     public final GameAction action;
-    public final Object payload;
+    public final T payload;
 
 
-    public GameInput(String id, GameAction action, Object payload) {
+    public GameInput(String id, GameAction action, T payload) {
         this.id = id;
         this.action = action;
         this.payload = payload;

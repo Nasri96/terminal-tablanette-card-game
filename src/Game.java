@@ -30,7 +30,7 @@ public class Game {
         ui.start();
     }
 
-    public GameState updateGame(GameInput input) {
+    public <T> GameState updateGame(GameInput<T> input) {
         GameState state = this.gameState;
         System.out.println(state);
         GamePhase gamePhase = state.getGamePhase();
@@ -56,7 +56,7 @@ public class Game {
 
             case TURN_PLAY_CARD:
                 if(input.action == GameAction.PLAY_CARD) {
-                    state = handlePlayCard(state, input.payload);
+                    state = handlePlayCard(state,(int) input.payload);
                     return this.gameState = state
                         .withGamePhase(GamePhase.TURN_PICK_COMBINATION);
                 }
@@ -66,7 +66,7 @@ public class Game {
 
             case TURN_PICK_COMBINATION:
                 if(input.action == GameAction.PICK_COMBINATION) {
-                    state = handlePickCombination(state, input.payload);
+                    state = handlePickCombination(state,(Integer) input.payload);
                     this.gameState = state
                         .withGamePhase(GamePhase.TURN_RESOLVE);
                 }
@@ -226,13 +226,13 @@ public class Game {
         return List.copyOf(currentTable);
     }
 
-    private GameState handlePlayCard(GameState state, Object payload) {
+    private GameState handlePlayCard(GameState state, int playedCardIndex) {
         // find which card is played
         // remove card from player's current hand
         // add played card to table
         // get winning combinations
         Player player = state.getCurrentPlayerMove();
-        Card playedCard = findPlayedCard(state, String.valueOf(payload));
+        Card playedCard = findPlayedCard(state, playedCardIndex);
         
         return state
             .transformPlayer(player.getId(), p -> p.withCurrentHand(removeCardFromPlayerHand(state, playedCard)))
@@ -240,7 +240,7 @@ public class Game {
             .withAllCombinations(this.combinationsService.getCombinations(playedCard, new ArrayList<>(state.getCurrentTable())));
     }
 
-    private GameState handlePickCombination(GameState state, Object payload) {
+    private GameState handlePickCombination(GameState state, Integer payload) {
         Player currentPlayer = state.getCurrentPlayerMove();
         List<Card> pickedCombination = findPickedCombination(state, payload);
 
@@ -460,12 +460,11 @@ public class Game {
         return List.of(currentTableArray);
     }
 
-    private Card findPlayedCard(GameState state, String playedCardIndex) {
-        int index = Integer.valueOf(playedCardIndex);
+    private Card findPlayedCard(GameState state, int playedCardIndex) {
         Player player = state.getCurrentPlayerMove();
         List<Card> playerHand = player.getCurrentHand();
 
-        return playerHand.get(index);
+        return playerHand.get(playedCardIndex);
     }
 
     private boolean checkPlayersCurrentHand(GameState state) {
@@ -490,14 +489,16 @@ public class Game {
         return false;
     }
 
-    private List<Card> findPickedCombination(GameState state, Object payload) {
+    private List<Card> findPickedCombination(GameState state, Integer payload) {
         // check for null first
         if(payload == null) {
             return new ArrayList<>();
         }
 
-        String allCombinationsInputIndex = String.valueOf(payload);
-        int inputIndex = Integer.valueOf(allCombinationsInputIndex);
+        // String allCombinationsInputIndex = String.valueOf(payload);
+        // int inputIndex = Integer.valueOf(allCombinationsInputIndex);
+
+        int inputIndex = payload;
 
         // return empty list if player choose to play card only
         if(inputIndex == -1 ) {
