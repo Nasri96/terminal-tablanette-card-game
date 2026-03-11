@@ -51,7 +51,7 @@ public class GameState {
     public static GameState initial(List<Player> playerList) {
         return new GameState(
             CardDeck.initial(), playerList, 0, 0, 
-            false, 8, false, null, 
+            false, 9, false, null, 
             null, null, 
             new ArrayList<>(), new ArrayList<>(), GamePhase.GAME_SETUP);
     }

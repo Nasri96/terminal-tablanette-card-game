@@ -8,9 +8,9 @@ public class Game {
     private GameState gameState;
     public TerminalUI ui;
     
-    public Game(List<Player> playersList) {
+    public Game() {
         this.combinationsService = new GameCombinationsService();
-        this.gameState = GameState.initial(playersList);
+        this.gameState = null;
         this.ui = null;
     }
 
@@ -26,13 +26,35 @@ public class Game {
         return this.gameState;
     }
 
+    // setup players and initialize the state
+    public void config(String playerName) {
+        Player p1 =  Player.initial("p1", playerName, false);
+        Player p2 = Player.initial("p2", "cpu1", true);
+
+        this.gameState = GameState.initial(List.of(p1, p2));
+    }
+
+    public void config(String player1Name, String player2Name) {
+        Player p1 =  Player.initial("p1", player1Name, false);
+        Player p2 = Player.initial("p2", player2Name, false);
+
+        this.gameState = GameState.initial(List.of(p1, p2));
+    }
+
+    public void config() {
+        Player p1 =  Player.initial("p1", "cpu1", true);
+        Player p2 = Player.initial("p2", "cpu2", true);
+
+        this.gameState = GameState.initial(List.of(p1, p2));
+    }
+
     public void startGame(TerminalUI ui) {
         ui.start();
     }
 
     public <T> GameState updateGame(GameInput<T> input) {
         GameState state = this.gameState;
-        System.out.println(state);
+        // System.out.println(state);
         GamePhase gamePhase = state.getGamePhase();
         Player nextPlayerTurn = state.getCurrentPlayerMove();
         // check turn ownership
@@ -131,9 +153,7 @@ public class Game {
             
             case GAME_END:
                 if(input.action == GameAction.CONTINUE) {
-                    state = handleGameEnd(state);
-                    return this.gameState = state
-                        .withGamePhase(GamePhase.GAME_SETUP);
+                    return state;
                 }
 
                 return state;

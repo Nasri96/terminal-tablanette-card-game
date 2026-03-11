@@ -9,14 +9,13 @@ public class App {
 
         Player humanPlayer =  Player.initial("p1", "player1", false);
         Player humanPlayer2 = Player.initial("p2", "player2", false);
-        PlayerCpu cpu = PlayerCpu.initial("p3","cpu1", true);
-        PlayerCpu cpu2 = PlayerCpu.initial("p4", "cpu2", true);
+        
         List<Player> playerList = new ArrayList<>();
         playerList.add(humanPlayer);
         playerList.add(humanPlayer2);
         Player[] players = { humanPlayer, humanPlayer2 };
 
-        Game game = new Game(playerList);
+        Game game = new Game();
         TerminalUI ui = new TerminalUI(game);
         game.setUi(ui);
 

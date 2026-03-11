@@ -6,17 +6,79 @@ public class TerminalUI {
     private Scanner scanner;
     protected Game game;
     protected GameActionController actionController;
+    protected TerminalUIPhase phase;
 
     public TerminalUI(Game game) {
         this.scanner = new Scanner(System.in);
         this.game = game;
         this.actionController = new GameActionController(game);
+        this.phase = TerminalUIPhase.MAIN_MENU;
     }
 
-    public void start() {
-        TerminalUICpu uiCpu = new TerminalUICpu(game);
-        
+    private TerminalUIPhase phaseMainMenu() {
+        while(true) {
+            printMainMenu();
+            String command = this.scanner.nextLine();
 
+            if(command.equals("start")) {
+                return TerminalUIPhase.CONFIG;
+            }
+
+            if(command.equals("rules")) {
+                printRules();
+            }
+
+            if(command.equals("quit")) {
+                return TerminalUIPhase.EXITED;
+            }
+        }
+    }
+
+    private TerminalUIPhase phaseConfig() { 
+        System.out.println("---- Tablanette Setup ----");
+        System.out.println(">> Player vs Cpu - type: '1'");
+        System.out.println(">> Player vs Player - type: '2'");
+        System.out.println(">> Cpu vs Cpu - type: '3'");
+        System.out.println(">> Back to main menu - type: 'back'");
+
+        String command = this.scanner.nextLine();
+
+        if(command.equals("1")) {
+            System.out.println("Player name: (can't be empty)");
+            System.out.print("> ");
+            String name = this.scanner.nextLine();
+            while(name.length() == 0) {
+                name = this.scanner.nextLine();    
+            }
+            game.config(name);
+            return TerminalUIPhase.GAME;
+        } else if(command.equals("2")) {
+            System.out.println("Player 1 name: (can't be empty)");
+            System.out.print("> ");
+            String p1Name = this.scanner.nextLine();
+            while(p1Name.length() == 0) {
+                p1Name = this.scanner.nextLine();
+            }
+            System.out.println("Player 2 name: (can't be empty)");
+            System.out.print("> ");
+            String p2Name = this.scanner.nextLine();
+            while(p2Name.length() == 0) {
+                p2Name = this.scanner.nextLine();
+            }
+            game.config(p1Name, p2Name);
+            return TerminalUIPhase.GAME;
+        } else if(command.equals("3")) {
+            game.config();
+            return TerminalUIPhase.GAME;
+        }
+        else if(command.equals("back")) {
+            return TerminalUIPhase.MAIN_MENU;
+        }
+
+        return TerminalUIPhase.MAIN_MENU;
+    }
+
+    private TerminalUIPhase phaseGame() {
         while(true) {
             GameState gameState = this.game.getGameState();
             GamePhase gamePhase = gameState.getGamePhase();
@@ -24,19 +86,15 @@ public class TerminalUI {
             // if current player is cpu, process cpu inputs
             Player player = gameState.getCurrentPlayerMove();
             if(player.isCpu()) {
-                uiCpu.processCpuInputs();
-                continue;
+                TerminalUICpu uiCpu = new TerminalUICpu(game, this.phase);
+                return uiCpu.processCpuInputs();
             }
 
             if(gamePhase == GamePhase.GAME_SETUP) {
                 System.out.println("------------------------ GAME_SETUP");
-                printMainMenu();
-
+                System.out.println(gameState.getPlayersList().get(0).getName() + " vs " + gameState.getPlayersList().get(1).getName());
+                System.out.println(">> Start - type 'start' to start the game");
                 String commandInput = this.scanner.nextLine();
-
-                if(commandInput.equals("rules")) {
-                    printRules();
-                }
 
                 if(commandInput.equals("start")) {
                     this.actionController.dispatch(player.getId(), GameAction.START, null);
@@ -157,20 +215,42 @@ public class TerminalUI {
                 System.out.println("Type 'continue' to start new game");
                 System.out.print("> ");
                 validateTextInput("continue");
-                this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
+                return TerminalUIPhase.MAIN_MENU;
+                // this.actionController.dispatch(player.getId(), GameAction.CONTINUE, null);
                 // player.actionGameEnd(game);
             }
 
-
+            return TerminalUIPhase.GAME;
         }
     }
 
-    public void printPlayerHand(GameState gameState) {
+    public void start() {
+        while(this.phase != TerminalUIPhase.EXITED) {
+            switch(phase) {
+                default: break;
+
+                case MAIN_MENU: 
+                    this.phase = phaseMainMenu();
+                    break;
+                    
+                case CONFIG:
+                    this.phase = phaseConfig();
+                    break;
+
+                case GAME:
+                    this.phase = phaseGame();
+                    break;
+
+            }
+        }
+    }
+
+    protected void printPlayerHand(GameState gameState) {
         Player player = gameState.getCurrentPlayerMove();
         System.out.print(player.getCurrentHand());
     }
 
-    public void printWonCards(GameState gameState) {
+    protected void printWonCards(GameState gameState) {
         Player player = gameState.getCurrentPlayerMove();
         if(player.getLastCardsWon().size() > 0) {
             System.out.println(player.getName() + " won cards: " + player.getLastCardsWon());
@@ -179,7 +259,7 @@ public class TerminalUI {
         }
     }
 
-    public void printAllCombinations(GameState gameState) {
+    protected void printAllCombinations(GameState gameState) {
         if(gameState.getAllCombinations().size() > 0) {
             System.out.println("Pick card combination: ");
             for(int i = 0; i < gameState.getAllCombinations().size() + 1; i++) {
@@ -215,7 +295,7 @@ public class TerminalUI {
         
     }
 
-    public void printLastWinnerInRound(GameState state) {
+    protected void printLastWinnerInRound(GameState state) {
         String lastWinnerInRoundId = state.getLastWinnerInRound();
         
         if(lastWinnerInRoundId != null) {
@@ -244,7 +324,7 @@ public class TerminalUI {
         
     }
 
-    public void printPointsAwarded(GameState state) {
+    protected void printPointsAwarded(GameState state) {
         Player currentPlayer = state.getCurrentPlayerMove();
         String lastWinnerOfTablePointId = state.getLastWinnerOfTablePoint();
 
@@ -267,12 +347,12 @@ public class TerminalUI {
         }
     }
 
-    public void printGameEnd(GameState gameState) {
+    protected void printGameEnd(GameState gameState) {
         MatchDetails lastMatch = MatchDetailsManager.getLastMatch();
         System.out.println(lastMatch);
     }
 
-    public void printMainMenu() {
+    protected void printMainMenu() {
         System.out.println("---- Tablanette Game ----");
         System.out.println(">> Play Game - type 'start'");
         System.out.println(">> Rules - type 'rules'");
@@ -280,7 +360,7 @@ public class TerminalUI {
         System.out.println("Your command?");
     }
 
-    public void printRules() {
+    protected void printRules() {
         while(true) {
             System.out.println("-- Tablanette Game Rules --");
             System.out.println("- CARD VALUES:");
@@ -306,7 +386,7 @@ public class TerminalUI {
         }
     }
 
-    public String validatePlayedCardInput(String input, GameState gameState) {
+    protected String validatePlayedCardInput(String input, GameState gameState) {
         System.out.println("your input was > " + input);
         // check if input was correct and apply rules
         Player player = gameState.getCurrentPlayerMove();
@@ -328,7 +408,7 @@ public class TerminalUI {
         return "invalid";
     }
 
-    public void validateTextInput(String textToValidate) {
+    protected void validateTextInput(String textToValidate) {
         String input = "";
 
         while(!input.equals(textToValidate)) {
@@ -336,7 +416,7 @@ public class TerminalUI {
         }
     }
 
-    public void printTable(GameState gameState) {
+    protected void printTable(GameState gameState) {
         int rows = 9;
         int cols = 40;
         List<List<Card>> cardRows = calcCardRows(gameState);
@@ -349,7 +429,7 @@ public class TerminalUI {
         String gameStateTitle = "";
         Player player = gameState.getCurrentPlayerMove();
         System.out.println();
-        if(!(player instanceof PlayerCpu)) {
+        if(!(player.isCpu())) {
             gameStateTitle = "Your cards:";
         }
 
@@ -386,7 +466,7 @@ public class TerminalUI {
                 if(i == 1 && j == cols -1) {
                     int lengthOfAllCards = getToStringLengthOfCards(gameState);
                     printEmptySpaces(cols / 2 - lengthOfAllCards / 2);
-                    if(!(player instanceof PlayerCpu)) {
+                    if(!(player.isCpu())) {
                         printPlayerHand(gameState);
                     }
                 }
@@ -398,7 +478,7 @@ public class TerminalUI {
         }
     }
 
-    public int getToStringLengthOfCards(GameState gameState) {
+    private int getToStringLengthOfCards(GameState gameState) {
         List<Card> cards = gameState.getCurrentPlayerMove().getCurrentHand();
         int lengthOfAllCards = 0;
         for(Card card: cards) {
@@ -409,7 +489,7 @@ public class TerminalUI {
     }
 
     // every four cards create new array list for card rows
-    public List<List<Card>> calcCardRows(GameState gameState) {
+    private List<List<Card>> calcCardRows(GameState gameState) {
         List<Card> table = gameState.getCurrentTable();
         List<List<Card>> cardRows = new ArrayList<>();
 
@@ -431,7 +511,7 @@ public class TerminalUI {
         return cardRows;
     }
 
-    public int printCurrentTable(List<Card> cardsToPrint) {
+    private int printCurrentTable(List<Card> cardsToPrint) {
         List<Card> table = this.game.getGameState().getCurrentTable();
 
         // one card is 3 spaces long
@@ -448,13 +528,13 @@ public class TerminalUI {
         return skippedCols;
     }
 
-    public void printEmptySpaces(int spaces) {
+    private void printEmptySpaces(int spaces) {
         for(int i = 0; i < spaces; i++) {
             System.out.print(" ");
         }
     }
 
-    public void wait(int miliseconds) {
+    protected void wait(int miliseconds) {
         try {
             Thread.sleep(miliseconds);
         } catch(InterruptedException exception) {
