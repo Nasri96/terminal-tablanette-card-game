@@ -135,7 +135,7 @@ public class Game {
 
             case DEAL_CARDS:
                 if(input.action == GameAction.CONTINUE) {
-                    state = handleNewDealCards(state);
+                    state = handleDealCards(state);
                     this.gameState = state
                         .withGamePhase(GamePhase.TURN_PLAY_CARD);
                 }
@@ -190,7 +190,7 @@ public class Game {
     }
 
 
-    private GameState handleNewDealCards(GameState state) {
+    private GameState handleDealCards(GameState state) {
         GamePhase phase = state.getGamePhase();
         List<Card> deck = state.getCardDeck().getDeck();
 
@@ -199,12 +199,12 @@ public class Game {
         System.out.println(orderIds);
 
         
-        List<Card> round1Receiver = List.copyOf(deck.subList(0, 1));
-        List<Card> round1Dealer = List.copyOf(deck.subList(1, 2));
-        List<Card> round2Receiver = List.copyOf(deck.subList(2, 3));
-        List<Card> round2Dealer = List.copyOf(deck.subList(3, 4));
+        List<Card> round1Receiver = List.copyOf(deck.subList(0, 3));
+        List<Card> round1Dealer = List.copyOf(deck.subList(3, 6));
+        List<Card> round2Receiver = List.copyOf(deck.subList(6, 9));
+        List<Card> round2Dealer = List.copyOf(deck.subList(9, 12));
         // if game phase is setup or start, deal cards to table also
-        List<Card> dealtTableCards = (phase == GamePhase.GAME_SETUP || phase == GamePhase.ROUND_START) ? List.copyOf(deck.subList(4, 5)) : List.of();
+        List<Card> dealtTableCards = (phase == GamePhase.GAME_SETUP || phase == GamePhase.ROUND_START) ? List.copyOf(deck.subList(12, 16)) : List.of();
         long countDealtCards = Stream.of(round1Receiver, round1Dealer, round2Receiver, round2Dealer, dealtTableCards)
             .flatMap(Collection::stream)
             .count();
@@ -230,7 +230,7 @@ public class Game {
         // move to PLAY_CARD phase
         return state
             .transformCardDeck(d -> d.shuffled())
-            .transform(this::handleNewDealCards);
+            .transform(this::handleDealCards);
     }
 
     private List<Card> removeCardFromPlayerHand(GameState state, Card playedCard) {
@@ -421,7 +421,7 @@ public class Game {
             .transformPlayer(p1.getId(), p -> p.withCardsWon(List.of()).withTablePoint(0))
             .transformPlayer(p2.getId(), p -> p.withCardsWon(List.of()).withTablePoint(0))
             .transformCardDeck(d -> CardDeck.initial().shuffled())
-            .transform(this::handleNewDealCards)
+            .transform(this::handleDealCards)
             .withLastWinnerOfMoreCards(null)
             .withLastWinnnerOfTablePoint(null)
             .withLastWinnerInRound(null)

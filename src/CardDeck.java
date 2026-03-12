@@ -30,13 +30,13 @@ public class CardDeck {
     private static List<Card> createDeck() {
         List<Card> newDeck = new ArrayList<>();
         // create cards from 2 - K symbols for all suits
-        for(int i = 0; i < SUITS.length - 3; i++) {
+        for(int i = 0; i < SUITS.length; i++) {
             // cards 2-9 give 0 points, exception is 2 club which awards one point, rest 10-K are one point with exception of 10 diamond which is two points
             for(int j = 0; j < SYMBOLS.length; j++) {
                 if(j < 8) {
                     // check for 2 club card, this one awards one point
                     if(SYMBOLS[j] == "2" && SUITS[i] == 'c') {
-                        Card card = new Card(SUITS[i], SYMBOLS[j], Integer.valueOf(j + 2), 0);
+                        Card card = new Card(SUITS[i], SYMBOLS[j], Integer.valueOf(j + 2), 1);
                         newDeck.add(card);
                     } else {
                         Card card = new Card(SUITS[i], SYMBOLS[j], Integer.valueOf(j + 2), 0);
